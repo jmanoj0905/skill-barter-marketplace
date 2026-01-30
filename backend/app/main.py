@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.database import init_connection_pool, close_all_connections
-from app.api.routes import matching  # NEW - Import matching routes
+from app.api.routes import matching,chat  # NEW - Import matching routes
 
 
 # ============================================
@@ -57,6 +57,8 @@ app.add_middleware(
 
 # Include matching routes
 app.include_router(matching.router, prefix="/api")
+# Include chat routes
+app.include_router(chat.router, prefix="/api")
 
 
 # ============================================
@@ -87,6 +89,9 @@ async def root():
                 "accept_match": "POST /api/matching/accept",
                 "statistics": "GET /api/matching/statistics",
                 "health": "GET /api/matching/health"
+            },
+                "chat": {
+            "send_message": "POST /api/chat/send"
             }
         }
     }

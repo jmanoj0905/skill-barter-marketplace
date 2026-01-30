@@ -64,6 +64,8 @@ class AcceptMatchResponse(BaseModel):
     proposed_at: str
     message: str
 
+class MatchRejectRequest(BaseModel):
+    candidate_user_id: int
 
 # ============================================
 # TEMPORARY AUTH (Replace with real JWT later)
@@ -170,6 +172,7 @@ async def accept_match(
         
         return AcceptMatchResponse(
             barter_id=barter['id'],
+            chat_id=barter['id'],
             status=barter['status'],
             user_a_id=barter['user_a_id'],
             user_b_id=barter['user_b_id'],
@@ -195,6 +198,25 @@ async def get_statistics(current_user_id: int = Depends(get_current_user_id)):
         return matching_service.get_match_statistics(current_user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/reject", status_code=200)
+async def reject_match(
+    request: MatchRejectRequest,
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """
+    Reject a suggested match.
+    Phase 4: Rejections are not persisted.
+    """
+    if request.candidate_user_id == current_user_id:
+        raise HTTPException(status_code=400, detail="Cannot reject yourself")
+
+    # Phase 4 design choice:
+    # Matching is ephemeral → no DB write here
+
+    return {
+        "message": "Match rejected successfully"
+    }
 
 
 @router.get("/health")
