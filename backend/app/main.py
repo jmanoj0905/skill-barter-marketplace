@@ -6,6 +6,12 @@ from app.core.config import settings
 from app.core.database import init_connection_pool, close_all_connections
 from app.api.routes import matching,chat  # NEW - Import matching routes
 
+from app.api.routes.session import router as session_router
+
+
+app.include_router(session_router)
+
+
 
 # ============================================
 # LIFESPAN EVENTS (NEW)
@@ -59,6 +65,9 @@ app.add_middleware(
 app.include_router(matching.router, prefix="/api")
 # Include chat routes
 app.include_router(chat.router, prefix="/api")
+#include session routes
+app.include_router(session_router)
+
 
 
 # ============================================
