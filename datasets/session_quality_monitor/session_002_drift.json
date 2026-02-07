@@ -1,0 +1,62 @@
+{
+  "session_id": "S002",
+  "topic_name": "Basic Math",
+  "topic_scope": "beginner",
+  "participants": {
+    "teacher_id": "user_C",
+    "learner_id": "user_D"
+  },
+  "transcript": [
+    {
+      "start": 0,
+      "end": 60,
+      "speaker": "user_C",
+      "text": "Today we will learn addition and subtraction with simple numbers and counting."
+    },
+    {
+      "start": 60,
+      "end": 120,
+      "speaker": "user_C",
+      "text": "Two plus three equals five. Three minus one equals two. These are basic operations."
+    },
+    {
+      "start": 120,
+      "end": 180,
+      "speaker": "user_C",
+      "text": "Now let me explain how numbers work in stock market trading and investment portfolios."
+    },
+    {
+      "start": 180,
+      "end": 240,
+      "speaker": "user_C",
+      "text": "Stock prices depend on demand and supply. When demand is high, prices go up."
+    },
+    {
+      "start": 240,
+      "end": 300,
+      "speaker": "user_C",
+      "text": "You can calculate returns using derivatives and financial formulas to maximize profit."
+    },
+    {
+      "start": 300,
+      "end": 360,
+      "speaker": "user_C",
+      "text": "Understanding calculus helps with options pricing and risk management strategies."
+    }
+  ],
+  "session_metadata": {
+    "scheduled_duration_minutes": 10,
+    "actual_duration_minutes": 6,
+    "late_join": false,
+    "early_leave": false,
+    "extended_silence": false
+  },
+  "ground_truth": {
+    "topic_correctness": "partially_correct",
+    "topic_drift": "sustained",
+    "scope_correctness": "out_of_scope",
+    "extended_silence": "no",
+    "join_mismatch": "no",
+    "final_outcome": "severe_violation"
+  }
+}

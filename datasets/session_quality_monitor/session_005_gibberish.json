@@ -1,0 +1,62 @@
+{
+  "session_id": "S005",
+  "topic_name": "Basic Math",
+  "topic_scope": "beginner",
+  "participants": {
+    "teacher_id": "user_I",
+    "learner_id": "user_J"
+  },
+  "transcript": [
+    {
+      "start": 0,
+      "end": 60,
+      "speaker": "user_I",
+      "text": "Hello, we will learn addition today."
+    },
+    {
+      "start": 60,
+      "end": 90,
+      "speaker": "user_J",
+      "text": ""
+    },
+    {
+      "start": 120,
+      "end": 180,
+      "speaker": "user_I",
+      "text": "[inaudible]"
+    },
+    {
+      "start": 180,
+      "end": 240,
+      "speaker": "user_I",
+      "text": "um uh yeah so like"
+    },
+    {
+      "start": 240,
+      "end": 300,
+      "speaker": "user_J",
+      "text": "Two plus two equals four, right?"
+    },
+    {
+      "start": 300,
+      "end": 360,
+      "speaker": "user_I",
+      "text": "..."
+    }
+  ],
+  "session_metadata": {
+    "scheduled_duration_minutes": 10,
+    "actual_duration_minutes": 6,
+    "late_join": false,
+    "early_leave": false,
+    "extended_silence": true
+  },
+  "ground_truth": {
+    "topic_correctness": "insufficient_data",
+    "topic_drift": "none",
+    "scope_correctness": "within_scope",
+    "extended_silence": "yes",
+    "join_mismatch": "no",
+    "final_outcome": "warning_worthy"
+  }
+}

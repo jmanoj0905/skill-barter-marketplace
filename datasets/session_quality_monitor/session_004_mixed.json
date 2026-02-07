@@ -1,0 +1,62 @@
+{
+  "session_id": "S004",
+  "topic_name": "Basic Math",
+  "topic_scope": "beginner",
+  "participants": {
+    "teacher_id": "user_G",
+    "learner_id": "user_H"
+  },
+  "transcript": [
+    {
+      "start": 0,
+      "end": 60,
+      "speaker": "user_G",
+      "text": "Let's learn counting and addition with small numbers."
+    },
+    {
+      "start": 60,
+      "end": 120,
+      "speaker": "user_G",
+      "text": "One plus one equals two. Two plus two equals four."
+    },
+    {
+      "start": 120,
+      "end": 180,
+      "speaker": "user_G",
+      "text": "By the way, did you know that quantum mechanics uses complex numbers?"
+    },
+    {
+      "start": 180,
+      "end": 240,
+      "speaker": "user_G",
+      "text": "Anyway, back to basics. Three minus one equals two."
+    },
+    {
+      "start": 240,
+      "end": 300,
+      "speaker": "user_G",
+      "text": "Numbers can represent anything. In finance, we use them for interest rates."
+    },
+    {
+      "start": 300,
+      "end": 360,
+      "speaker": "user_G",
+      "text": "Let's finish with counting. One, two, three, four, five. Practice at home!"
+    }
+  ],
+  "session_metadata": {
+    "scheduled_duration_minutes": 10,
+    "actual_duration_minutes": 6,
+    "late_join": false,
+    "early_leave": false,
+    "extended_silence": false
+  },
+  "ground_truth": {
+    "topic_correctness": "partially_correct",
+    "topic_drift": "intermittent",
+    "scope_correctness": "mixed",
+    "extended_silence": "no",
+    "join_mismatch": "no",
+    "final_outcome": "warning_worthy"
+  }
+}

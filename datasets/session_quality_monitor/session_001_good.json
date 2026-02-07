@@ -1,0 +1,68 @@
+{
+  "session_id": "S001",
+  "topic_name": "Basic Math",
+  "topic_scope": "beginner",
+  "participants": {
+    "teacher_id": "user_A",
+    "learner_id": "user_B"
+  },
+  "transcript": [
+    {
+      "start": 0,
+      "end": 60,
+      "speaker": "user_A",
+      "text": "Hello! Today we will learn basic addition and subtraction using simple numbers."
+    },
+    {
+      "start": 60,
+      "end": 120,
+      "speaker": "user_A",
+      "text": "Let's start with addition. When you add two numbers together, you get a sum. For example, two plus three equals five."
+    },
+    {
+      "start": 120,
+      "end": 150,
+      "speaker": "user_B",
+      "text": "That makes sense. Can you show me another example?"
+    },
+    {
+      "start": 150,
+      "end": 210,
+      "speaker": "user_A",
+      "text": "Sure! Let's try four plus six. If you count four items and add six more items, you have ten items total."
+    },
+    {
+      "start": 210,
+      "end": 270,
+      "speaker": "user_A",
+      "text": "Now subtraction is the opposite. When you subtract, you take away. Five minus two equals three."
+    },
+    {
+      "start": 270,
+      "end": 300,
+      "speaker": "user_B",
+      "text": "Got it! So subtraction removes numbers."
+    },
+    {
+      "start": 300,
+      "end": 360,
+      "speaker": "user_A",
+      "text": "Exactly right! Let's practice counting backwards. Start at ten and subtract one each time."
+    }
+  ],
+  "session_metadata": {
+    "scheduled_duration_minutes": 10,
+    "actual_duration_minutes": 6,
+    "late_join": false,
+    "early_leave": false,
+    "extended_silence": false
+  },
+  "ground_truth": {
+    "topic_correctness": "correct",
+    "topic_drift": "none",
+    "scope_correctness": "within_scope",
+    "extended_silence": "no",
+    "join_mismatch": "no",
+    "final_outcome": "acceptable"
+  }
+}

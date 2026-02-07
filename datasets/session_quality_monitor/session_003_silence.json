@@ -1,0 +1,50 @@
+{
+  "session_id": "S003",
+  "topic_name": "Basic Math",
+  "topic_scope": "beginner",
+  "participants": {
+    "teacher_id": "user_E",
+    "learner_id": "user_F"
+  },
+  "transcript": [
+    {
+      "start": 0,
+      "end": 60,
+      "speaker": "user_E",
+      "text": "Hello, we will cover basic addition today."
+    },
+    {
+      "start": 60,
+      "end": 90,
+      "speaker": "user_F",
+      "text": "Okay, I'm ready."
+    },
+    {
+      "start": 270,
+      "end": 330,
+      "speaker": "user_E",
+      "text": "Sorry, I had technical issues. Let me talk about derivatives and advanced calculus now."
+    },
+    {
+      "start": 330,
+      "end": 390,
+      "speaker": "user_E",
+      "text": "The derivative of x squared is two x. Integration is the reverse process."
+    }
+  ],
+  "session_metadata": {
+    "scheduled_duration_minutes": 10,
+    "actual_duration_minutes": 6.5,
+    "late_join": false,
+    "early_leave": false,
+    "extended_silence": true
+  },
+  "ground_truth": {
+    "topic_correctness": "incorrect",
+    "topic_drift": "immediate",
+    "scope_correctness": "out_of_scope",
+    "extended_silence": "yes",
+    "join_mismatch": "no",
+    "final_outcome": "severe_violation"
+  }
+}
