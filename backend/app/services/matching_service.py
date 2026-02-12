@@ -1,19 +1,22 @@
 """
-Matching Service
-Finds compatible barter partners using semantic skill matching and multi-factor scoring
+Matching Service (Updated for skill_graph + user_skills schema)
+Finds compatible barter partners using semantic skill matching
 """
 
-from typing import List, Dict, Optional, Tuple
-from app.services.embedding_service import get_embedding_service
-from app.core.database import get_connection, return_connection
+from typing import List, Dict, Optional
+from backend.app.services.embedding_service import get_embedding_service
+from backend.app.core.database import get_connection, return_connection
 from psycopg2.extras import RealDictCursor
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class MatchingService:
     """
     Service for finding and scoring potential barter partners
-    Uses AI embeddings for semantic skill matching
+    Uses AI embeddings for semantic skill matching with normalized skill_graph
     """
     
     def __init__(self):
@@ -31,7 +34,7 @@ class MatchingService:
         
         Algorithm:
         1. Generate embedding for desired skill
-        2. Find users offering similar skills (vector search)
+        2. Find users offering similar skills (vector search on skill_graph)
         3. Check mutual interest (do they want what you offer?)
         4. Calculate match score (skill + trust + activity)
         5. Generate human-readable explanation
@@ -70,6 +73,8 @@ class MatchingService:
         for candidate in candidates:
             # Get candidate's full info
             candidate_info = self._get_user_info(candidate['user_id'])
+            if not candidate_info:
+                continue
             
             # Check if candidate wants any skill current user offers
             mutual_interest = self._check_mutual_interest(
@@ -155,7 +160,8 @@ class MatchingService:
     ) -> List[Dict]:
         """
         Find users offering skills similar to desired skill
-        Uses PostgreSQL pgvector for fast similarity search
+        
+        NEW: Queries skill_graph (canonical embeddings) joined with user_skills
         
         Returns list of candidates with their skill info and similarity scores
         """
@@ -169,18 +175,21 @@ class MatchingService:
             # Vector similarity search using cosine distance
             # <=> is the cosine distance operator from pgvector
             # 1 - distance = similarity score
+            #
+            # NEW: JOIN user_skills → skill_graph to get canonical embeddings
             cursor.execute(
                 """
                 SELECT DISTINCT
-                    s.user_id,
-                    s.skill_name,
-                    s.proficiency_level,
-                    1 - (s.embedding <=> %s::vector) as similarity
-                FROM skills s
-                WHERE s.skill_type = 'offer'
-                  AND s.user_id != %s
-                  AND s.embedding IS NOT NULL
-                  AND 1 - (s.embedding <=> %s::vector) >= %s
+                    us.user_id,
+                    sg.skill_name,
+                    us.proficiency_level,
+                    1 - (sg.skill_embedding <=> %s::vector) as similarity
+                FROM user_skills us
+                JOIN skill_graph sg ON us.skill_graph_id = sg.id
+                WHERE us.skill_type = 'offer'
+                  AND us.user_id != %s
+                  AND sg.skill_embedding IS NOT NULL
+                  AND 1 - (sg.skill_embedding <=> %s::vector) >= %s
                 ORDER BY similarity DESC
                 LIMIT 20
                 """,
@@ -202,6 +211,8 @@ class MatchingService:
         """
         Check if user B wants any skill that user A offers
         
+        NEW: Queries through skill_graph for embeddings
+        
         Returns:
             Skill name if mutual interest found, None otherwise
         """
@@ -209,12 +220,15 @@ class MatchingService:
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
         try:
-            # Get what user A offers
+            # Get what user A offers (with embeddings from skill_graph)
             cursor.execute(
                 """
-                SELECT skill_name, embedding::text as embedding
-                FROM skills
-                WHERE user_id = %s AND skill_type = 'offer' AND embedding IS NOT NULL
+                SELECT sg.skill_name, sg.skill_embedding::text as embedding
+                FROM user_skills us
+                JOIN skill_graph sg ON us.skill_graph_id = sg.id
+                WHERE us.user_id = %s 
+                  AND us.skill_type = 'offer' 
+                  AND sg.skill_embedding IS NOT NULL
                 """,
                 (user_a_id,)
             )
@@ -223,12 +237,15 @@ class MatchingService:
             if not user_a_offers:
                 return None
             
-            # Get what user B wants
+            # Get what user B wants (with embeddings from skill_graph)
             cursor.execute(
                 """
-                SELECT skill_name, embedding::text as embedding
-                FROM skills
-                WHERE user_id = %s AND skill_type = 'want' AND embedding IS NOT NULL
+                SELECT sg.skill_name, sg.skill_embedding::text as embedding
+                FROM user_skills us
+                JOIN skill_graph sg ON us.skill_graph_id = sg.id
+                WHERE us.user_id = %s 
+                  AND us.skill_type = 'want' 
+                  AND sg.skill_embedding IS NOT NULL
                 """,
                 (user_b_id,)
             )
@@ -276,11 +293,14 @@ class MatchingService:
         """
         Calculate overall match score using multiple factors
         
+        FIXED: Trust component now measures candidate reliability,
+               not similarity of trust levels (bug fix)
+        
         Scoring formula:
-        - Base score: 0.95 if mutual interest, 0.70 if one-sided
         - Skill similarity: weighted at 50%
-        - Trust compatibility: weighted at 30%
+        - Trust score: weighted at 30% (FIXED: use candidate's trust directly)
         - Activity level: weighted at 20%
+        - Mutual interest bonus: +10% if present
         
         Returns:
             Score between 0.0 and 1.0
@@ -294,11 +314,9 @@ class MatchingService:
         skill_score = skill_similarity
         
         # 2. Trust compatibility component
-        # Penalize large trust score differences
-        # Users with similar trust levels should match better
-        trust_diff = abs(current_user['trust_score'] - candidate['trust_score'])
-        trust_score = 1.0 - (trust_diff * 0.5)  # Max penalty is 0.5
-        trust_score = max(0.0, min(1.0, trust_score))  # Clamp to [0, 1]
+        # FIXED: Use candidate's trust score directly as quality signal
+        # Higher trust = better match (not penalize difference)
+        trust_score = candidate['trust_score']
         
         # 3. Activity component
         # Prefer users with some successful barters (shows reliability)
@@ -360,6 +378,8 @@ class MatchingService:
     def _get_user_skills(self, user_id: int, skill_type: str) -> List[str]:
         """
         Get list of skill names for a user
+        
+        NEW: Joins through skill_graph to get canonical names
         """
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -367,10 +387,11 @@ class MatchingService:
         try:
             cursor.execute(
                 """
-                SELECT skill_name
-                FROM skills
-                WHERE user_id = %s AND skill_type = %s
-                ORDER BY skill_name
+                SELECT sg.skill_name
+                FROM user_skills us
+                JOIN skill_graph sg ON us.skill_graph_id = sg.id
+                WHERE us.user_id = %s AND us.skill_type = %s
+                ORDER BY sg.skill_name
                 """,
                 (user_id, skill_type)
             )
@@ -405,7 +426,8 @@ class MatchingService:
     def get_match_statistics(self, user_id: int) -> Dict:
         """
         Get statistics about user's matching potential
-        Useful for debugging and analytics
+        
+        NEW: Updated to query skill_graph + user_skills
         """
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -415,11 +437,12 @@ class MatchingService:
             cursor.execute(
                 """
                 SELECT 
-                    COUNT(CASE WHEN skill_type = 'offer' THEN 1 END) as skills_offered,
-                    COUNT(CASE WHEN skill_type = 'want' THEN 1 END) as skills_wanted,
-                    COUNT(CASE WHEN embedding IS NOT NULL THEN 1 END) as skills_with_embeddings
-                FROM skills
-                WHERE user_id = %s
+                    COUNT(CASE WHEN us.skill_type = 'offer' THEN 1 END) as skills_offered,
+                    COUNT(CASE WHEN us.skill_type = 'want' THEN 1 END) as skills_wanted,
+                    COUNT(CASE WHEN sg.skill_embedding IS NOT NULL THEN 1 END) as skills_with_embeddings
+                FROM user_skills us
+                JOIN skill_graph sg ON us.skill_graph_id = sg.id
+                WHERE us.user_id = %s
                 """,
                 (user_id,)
             )
@@ -428,13 +451,16 @@ class MatchingService:
             # Count potential matches for each wanted skill
             cursor.execute(
                 """
-                SELECT COUNT(DISTINCT s2.user_id) as potential_partners
-                FROM skills s1
-                JOIN skills s2 ON s1.skill_type = 'want' AND s2.skill_type = 'offer'
-                WHERE s1.user_id = %s
-                  AND s2.user_id != %s
-                  AND s1.embedding IS NOT NULL
-                  AND s2.embedding IS NOT NULL
+                SELECT COUNT(DISTINCT us2.user_id) as potential_partners
+                FROM user_skills us1
+                JOIN skill_graph sg1 ON us1.skill_graph_id = sg1.id
+                JOIN user_skills us2 ON us2.skill_type = 'offer'
+                JOIN skill_graph sg2 ON us2.skill_graph_id = sg2.id
+                WHERE us1.user_id = %s
+                  AND us1.skill_type = 'want'
+                  AND us2.user_id != %s
+                  AND sg1.skill_embedding IS NOT NULL
+                  AND sg2.skill_embedding IS NOT NULL
                 """,
                 (user_id, user_id)
             )

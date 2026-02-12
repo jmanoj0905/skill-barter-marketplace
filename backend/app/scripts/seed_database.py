@@ -1,6 +1,6 @@
 """
-Seed database with test users and skills
-Generates embeddings for all skills
+Seed database with test users and skills (Updated for skill_graph schema)
+Uses skill normalization service to populate canonical skill_graph
 """
 
 import sys
@@ -11,11 +11,10 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from core.database import init_connection_pool, execute_query, get_connection, return_connection
-from services.embedding_service import get_embedding_service
+from backend.app.core.database import init_connection_pool, execute_query, get_connection, return_connection
+from backend.app.services.skill_normalization_service import get_skill_normalization_service
 import bcrypt
 from psycopg2.extras import RealDictCursor
-import json
 
 # Test users with diverse skills
 TEST_USERS = [
@@ -25,13 +24,13 @@ TEST_USERS = [
         "name": "Alice Chen",
         "trust_score": 0.80,
         "skills_offered": [
-            ("python programming", "expert"),
-            ("data analysis", "advanced"),
-            ("machine learning", "intermediate"),
+            ("Python Programming", "expert"),
+            ("Data Analysis", "advanced"),
+            ("Machine Learning", "intermediate"),
         ],
         "skills_wanted": [
-            ("guitar", None),
-            ("spanish", "beginner"),
+            ("Guitar", None),
+            ("Spanish", "beginner"),
         ]
     },
     {
@@ -40,13 +39,13 @@ TEST_USERS = [
         "name": "Bob Singh",
         "trust_score": 0.60,
         "skills_offered": [
-            ("guitar", "expert"),
-            ("music theory", "advanced"),
-            ("singing", "intermediate"),
+            ("Guitar", "expert"),
+            ("Music Theory", "advanced"),
+            ("Singing", "intermediate"),
         ],
         "skills_wanted": [
-            ("python", None),
-            ("web development", "beginner"),
+            ("Python", None),
+            ("Web Development", "beginner"),
         ]
     },
     {
@@ -55,13 +54,13 @@ TEST_USERS = [
         "name": "Carol Lee",
         "trust_score": 0.75,
         "skills_offered": [
-            ("spanish", "expert"),
-            ("french", "advanced"),
-            ("translation", "expert"),
+            ("Spanish", "expert"),
+            ("French", "advanced"),
+            ("Translation", "expert"),
         ],
         "skills_wanted": [
-            ("data analysis", None),
-            ("photography", "beginner"),
+            ("Data Analysis", None),
+            ("Photography", "beginner"),
         ]
     },
     {
@@ -70,13 +69,13 @@ TEST_USERS = [
         "name": "David Kumar",
         "trust_score": 0.50,
         "skills_offered": [
-            ("web development", "expert"),
-            ("react", "advanced"),
-            ("javascript", "expert"),
+            ("Web Development", "expert"),
+            ("React", "advanced"),
+            ("JavaScript", "expert"),
         ],
         "skills_wanted": [
-            ("python programming", None),
-            ("machine learning", "beginner"),
+            ("Python Programming", None),
+            ("Machine Learning", "beginner"),
         ]
     },
     {
@@ -85,16 +84,17 @@ TEST_USERS = [
         "name": "Eve Martinez",
         "trust_score": 0.65,
         "skills_offered": [
-            ("photography", "expert"),
-            ("video editing", "advanced"),
-            ("graphic design", "intermediate"),
+            ("Photography", "expert"),
+            ("Video Editing", "advanced"),
+            ("Graphic Design", "intermediate"),
         ],
         "skills_wanted": [
-            ("music theory", None),
-            ("spanish", "beginner"),
+            ("Music Theory", None),
+            ("Spanish", "beginner"),
         ]
     },
 ]
+
 
 def clear_existing_data():
     """
@@ -105,16 +105,18 @@ def clear_existing_data():
     
     # Delete in correct order due to foreign keys
     tables = [
-        'settlements',
         'qa_verdicts',
-        'feedback',
+        'session_feedback',
         'chat_messages',
         'escrows',
         'barters',
+        'matches',
+        'user_availability',
         'transactions',
         'wallets',
         'trust_scores',
-        'skills',
+        'user_skills',       # NEW: must delete before skill_graph
+        'skill_graph',       # NEW: canonical skills
         'users'
     ]
     
@@ -137,16 +139,17 @@ def clear_existing_data():
         cursor.close()
         return_connection(conn)
 
+
 def create_user(user_data):
     """
-    Create a user with skills and initial wallet
+    Create a user with trust score and wallet
     Returns user_id
     """
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     try:
-        # Hash password using bcrypt directly (FIX for compatibility)
+        # Hash password using bcrypt
         password_bytes = user_data["password"].encode('utf-8')
         salt = bcrypt.gensalt()
         password_hash = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
@@ -200,108 +203,52 @@ def create_user(user_data):
         cursor.close()
         return_connection(conn)
 
-def add_skills(user_id, skills_offered, skills_wanted):
+
+def add_skills_to_user(user_id, skills_offered, skills_wanted):
     """
-    Add skills for a user (without embeddings initially)
-    Returns list of skill IDs
+    Add skills to user using normalization service
+    
+    NEW: This uses the skill normalization flow:
+    1. Each skill name is normalized
+    2. System searches for similar skills in skill_graph
+    3. If match found (similarity > 0.85) → reuse existing
+    4. If no match → create new skill_graph entry with embedding
+    5. Link user to skill via user_skills table
+    
+    Returns count of skills added
     """
-    conn = get_connection()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
-    skill_ids = []
+    skill_service = get_skill_normalization_service()
+    total_added = 0
     
     try:
         # Add offered skills
         for skill_name, proficiency in skills_offered:
-            cursor.execute(
-                """
-                INSERT INTO skills (user_id, skill_name, skill_type, proficiency_level)
-                VALUES (%s, %s, 'offer', %s)
-                RETURNING id
-                """,
-                (user_id, skill_name, proficiency)
+            skill_service.add_user_skill(
+                user_id=user_id,
+                skill_name=skill_name,
+                skill_type='offer',
+                proficiency_level=proficiency
             )
-            skill_ids.append(cursor.fetchone()['id'])
+            total_added += 1
+            print(f"    ✓ Added offer: {skill_name} ({proficiency})")
         
         # Add wanted skills
         for skill_name, proficiency in skills_wanted:
-            cursor.execute(
-                """
-                INSERT INTO skills (user_id, skill_name, skill_type, proficiency_level)
-                VALUES (%s, %s, 'want', %s)
-                RETURNING id
-                """,
-                (user_id, skill_name, proficiency)
+            skill_service.add_user_skill(
+                user_id=user_id,
+                skill_name=skill_name,
+                skill_type='want',
+                proficiency_level=proficiency
             )
-            skill_ids.append(cursor.fetchone()['id'])
+            total_added += 1
+            print(f"    ✓ Added want: {skill_name}")
         
-        conn.commit()
-        return skill_ids
+        return total_added
         
     except Exception as e:
-        conn.rollback()
         print(f"✗ Error adding skills for user {user_id}: {e}")
         raise
-    finally:
-        cursor.close()
-        return_connection(conn)
 
-def generate_embeddings_for_all_skills():
-    """
-    Generate embeddings for all skills in database
-    This is the AI/ML step!
-    """
-    print("\n🤖 Generating embeddings for all skills...")
-    
-    # Get embedding service
-    embedding_service = get_embedding_service()
-    
-    conn = get_connection()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
-    
-    try:
-        # Get all skills without embeddings
-        cursor.execute(
-            """
-            SELECT id, skill_name
-            FROM skills
-            WHERE embedding IS NULL
-            ORDER BY id
-            """
-        )
-        skills = cursor.fetchall()
-        
-        print(f"  Found {len(skills)} skills to process")
-        
-        # Generate embeddings
-        skill_names = [skill['skill_name'] for skill in skills]
-        embeddings = embedding_service.generate_embeddings_batch(skill_names)
-        
-        # Update database with embeddings
-        for skill, embedding in zip(skills, embeddings):
-            # Convert list to PostgreSQL vector format
-            embedding_str = '[' + ','.join(map(str, embedding)) + ']'
-            
-            cursor.execute(
-                """
-                UPDATE skills
-                SET embedding = %s::vector
-                WHERE id = %s
-                """,
-                (embedding_str, skill['id'])
-            )
-            
-            print(f"  ✓ Generated embedding for '{skill['skill_name']}'")
-        
-        conn.commit()
-        print(f"✓ Generated {len(skills)} embeddings")
-        
-    except Exception as e:
-        conn.rollback()
-        print(f"✗ Error generating embeddings: {e}")
-        raise
-    finally:
-        cursor.close()
-        return_connection(conn)
 
 def verify_seeded_data():
     """
@@ -313,28 +260,40 @@ def verify_seeded_data():
     result = execute_query("SELECT COUNT(*) as count FROM users")
     print(f"  Users: {result[0]['count']}")
     
-    # Check skills
-    result = execute_query("SELECT COUNT(*) as count FROM skills")
-    total_skills = result[0]['count']
-    print(f"  Skills: {total_skills}")
+    # Check canonical skills (NEW)
+    result = execute_query("SELECT COUNT(*) as count FROM skill_graph")
+    total_canonical_skills = result[0]['count']
+    print(f"  Canonical skills (skill_graph): {total_canonical_skills}")
     
-    # Check embeddings
-    result = execute_query("SELECT COUNT(*) as count FROM skills WHERE embedding IS NOT NULL")
+    # Check embeddings in skill_graph
+    result = execute_query(
+        "SELECT COUNT(*) as count FROM skill_graph WHERE skill_embedding IS NOT NULL"
+    )
     embedded_skills = result[0]['count']
-    print(f"  Skills with embeddings: {embedded_skills}/{total_skills}")
+    print(f"  Skills with embeddings: {embedded_skills}/{total_canonical_skills}")
+    
+    # Check user-skill links
+    result = execute_query("SELECT COUNT(*) as count FROM user_skills")
+    print(f"  User-skill links: {result[0]['count']}")
     
     # Check wallets
     result = execute_query("SELECT COUNT(*) as count FROM wallets")
     print(f"  Wallets: {result[0]['count']}")
     
-    # Show sample user
+    # Show sample user with skills
     result = execute_query(
         """
-        SELECT u.name, u.email, u.trust_score, w.available_balance,
-               COUNT(s.id) as skill_count
+        SELECT 
+            u.name, 
+            u.email, 
+            u.trust_score, 
+            w.available_balance,
+            COUNT(DISTINCT us.id) as skill_count,
+            COUNT(DISTINCT us.id) FILTER (WHERE us.skill_type = 'offer') as offers,
+            COUNT(DISTINCT us.id) FILTER (WHERE us.skill_type = 'want') as wants
         FROM users u
         LEFT JOIN wallets w ON u.id = w.user_id
-        LEFT JOIN skills s ON u.id = s.user_id
+        LEFT JOIN user_skills us ON u.id = us.user_id
         GROUP BY u.id, u.name, u.email, u.trust_score, w.available_balance
         LIMIT 1
         """
@@ -347,14 +306,33 @@ def verify_seeded_data():
         print(f"    Email: {user['email']}")
         print(f"    Trust: {user['trust_score']}")
         print(f"    Balance: {user['available_balance']} credits")
-        print(f"    Skills: {user['skill_count']}")
+        print(f"    Skills: {user['skill_count']} ({user['offers']} offer, {user['wants']} want)")
+    
+    # Show skill deduplication example
+    print(f"\n  Skill normalization example:")
+    result = execute_query(
+        """
+        SELECT 
+            sg.skill_name,
+            COUNT(us.id) as user_count,
+            sg.popularity_score
+        FROM skill_graph sg
+        LEFT JOIN user_skills us ON sg.id = us.skill_graph_id
+        GROUP BY sg.id, sg.skill_name, sg.popularity_score
+        ORDER BY user_count DESC
+        LIMIT 3
+        """
+    )
+    for skill in result:
+        print(f"    '{skill['skill_name']}': {skill['user_count']} users, popularity={skill['popularity_score']:.2f}")
+
 
 def main():
     """
     Main seeding function
     """
     print("="*60)
-    print("DATABASE SEEDING SCRIPT")
+    print("DATABASE SEEDING SCRIPT (Updated for skill_graph schema)")
     print("="*60)
     
     # Initialize database connection
@@ -371,20 +349,20 @@ def main():
         clear_existing_data()
         
         # Step 2: Create users with skills
-        print("\n👥 Creating test users...")
+        print("\n👥 Creating test users with skills...")
         for user_data in TEST_USERS:
             user_id = create_user(user_data)
-            skill_ids = add_skills(
+            print(f"  ✓ Created {user_data['name']} (ID: {user_id})")
+            
+            # Add skills using normalization service
+            # This will auto-populate skill_graph and generate embeddings
+            skill_count = add_skills_to_user(
                 user_id,
                 user_data["skills_offered"],
                 user_data["skills_wanted"]
             )
-            print(f"  ✓ Created {user_data['name']} with {len(skill_ids)} skills")
         
-        # Step 3: Generate embeddings
-        generate_embeddings_for_all_skills()
-        
-        # Step 4: Verify
+        # Step 3: Verify
         verify_seeded_data()
         
         print("\n" + "="*60)
@@ -394,10 +372,17 @@ def main():
         for user in TEST_USERS:
             print(f"  - {user['email']}")
         
+        print("\n📌 Key improvements in new schema:")
+        print("  • Canonical skill_graph table (one embedding per skill)")
+        print("  • Automatic skill normalization (deduplicates similar skills)")
+        print("  • Popularity scoring (tracks how many users offer/want each skill)")
+        print("  • More efficient vector search (shared embeddings)")
+        
     except Exception as e:
         print(f"\n✗ Seeding failed: {e}")
         import traceback
         traceback.print_exc()
+
 
 if __name__ == "__main__":
     main()

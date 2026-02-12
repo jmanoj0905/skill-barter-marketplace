@@ -7,8 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-from app.services.matching_service import get_matching_service
-from app.core.database import get_connection, return_connection, execute_query
+from backend.app.services.matching_service import get_matching_service
+from backend.app.core.database import get_connection, return_connection, execute_query
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 

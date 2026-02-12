@@ -23,7 +23,7 @@ DB_CONFIG = {
 
 # Connection pool (reuses connections for performance)
 connection_pool = None
-
+print("DB CONFIG:", DB_CONFIG)
 def init_connection_pool():
     """
     Initialize database connection pool

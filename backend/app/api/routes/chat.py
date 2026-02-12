@@ -3,8 +3,8 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from psycopg2.extras import RealDictCursor
 
-from app.core.database import get_connection, return_connection
-from app.api.routes.matching import get_current_user_id
+from backend.app.core.database import get_connection, return_connection
+from backend.app.api.routes.matching import get_current_user_id
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 

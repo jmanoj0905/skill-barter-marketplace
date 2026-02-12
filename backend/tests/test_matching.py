@@ -11,8 +11,8 @@ backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
 # Fixed imports to match your project structure
-from app.core.database import init_connection_pool, execute_query
-from app.services.matching_service import get_matching_service
+from backend.app.core.database import init_connection_pool, execute_query
+from backend.app.services.matching_service import get_matching_service
 
 
 def test_find_matches_alice_wants_guitar():
