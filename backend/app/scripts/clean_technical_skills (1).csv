@@ -1,0 +1,376 @@
+skill_name,skill_category,description
+Python Programming,Programming,High-level programming language for general-purpose programming
+Java,Programming,Object-oriented programming language for enterprise applications
+JavaScript,Programming,Programming language for web development and interactive websites
+TypeScript,Programming,Typed superset of JavaScript for large-scale applications
+C++,Programming,High-performance programming language for system programming
+C#,Programming,Microsoft programming language for .NET framework applications
+Ruby,Programming,Dynamic programming language focused on simplicity
+PHP,Programming,Server-side scripting language for web development
+Go,Programming,Google's programming language for concurrent systems
+Rust,Programming,Systems programming language focused on safety and performance
+Kotlin,Programming,Modern programming language for Android development
+Swift,Programming,Apple's programming language for iOS and macOS development
+React,Web Development,JavaScript library for building user interfaces
+Angular,Web Development,TypeScript framework for building web applications
+Vue.js,Web Development,Progressive JavaScript framework for building UIs
+Node.js,Web Development,JavaScript runtime for server-side development
+Django,Web Development,Python web framework for rapid development
+Flask,Web Development,Lightweight Python web framework
+Express.js,Web Development,Minimal Node.js web framework
+HTML5,Web Development,Markup language for structuring web content
+CSS3,Web Development,Stylesheet language for web design
+Sass,Web Development,CSS preprocessor for enhanced styling
+Tailwind CSS,Web Development,Utility-first CSS framework
+Bootstrap,Web Development,Popular CSS framework for responsive design
+Next.js,Web Development,React framework for server-side rendering
+Svelte,Web Development,Compiler-based JavaScript framework
+Machine Learning,Data Science,Algorithms that learn from data patterns
+Deep Learning,Data Science,Neural networks for complex pattern recognition
+TensorFlow,Data Science,Open-source machine learning framework
+PyTorch,Data Science,Deep learning framework for research and production
+Scikit-learn,Data Science,Machine learning library for Python
+Pandas,Data Science,Data manipulation and analysis library for Python
+NumPy,Data Science,Numerical computing library for Python
+Jupyter Notebook,Data Science,Interactive computing environment for data science
+Data Visualization,Data Science,Graphical representation of data and insights
+Natural Language Processing,Data Science,AI for understanding human language
+Computer Vision,Data Science,AI for analyzing visual information
+Statistical Analysis,Data Science,Mathematical analysis of data patterns
+Big Data,Data Science,Processing and analysis of large datasets
+A/B Testing,Data Science,Experimental design for comparing variations
+AWS,Cloud Computing,Amazon Web Services cloud platform
+Azure,Cloud Computing,Microsoft's cloud computing platform
+Google Cloud Platform,Cloud Computing,Google's cloud infrastructure services
+Kubernetes,Cloud Computing,Container orchestration platform
+Docker,Cloud Computing,Platform for containerizing applications
+Terraform,Cloud Computing,Infrastructure as code tool
+CloudFormation,Cloud Computing,AWS infrastructure automation service
+Lambda Functions,Cloud Computing,Serverless computing service
+EC2,Cloud Computing,Amazon Elastic Compute Cloud
+S3,Cloud Computing,Amazon Simple Storage Service
+DevOps,DevOps,Practices combining software development and IT operations
+CI/CD,DevOps,Continuous Integration and Continuous Deployment
+Jenkins,DevOps,Automation server for CI/CD pipelines
+GitLab CI,DevOps,GitLab's integrated CI/CD platform
+GitHub Actions,DevOps,GitHub's workflow automation platform
+Ansible,DevOps,IT automation and configuration management
+Chef,DevOps,Infrastructure automation framework
+Puppet,DevOps,Configuration management tool
+Prometheus,DevOps,Monitoring and alerting toolkit
+Grafana,DevOps,Visualization and analytics platform
+PostgreSQL,Databases,Advanced open-source relational database
+MySQL,Databases,Popular open-source relational database
+MongoDB,Databases,NoSQL document database
+Redis,Databases,In-memory data structure store
+Elasticsearch,Databases,Distributed search and analytics engine
+Cassandra,Databases,Distributed NoSQL database
+DynamoDB,Databases,AWS NoSQL database service
+Neo4j,Databases,Graph database management system
+Oracle Database,Databases,Enterprise relational database
+SQL Server,Databases,Microsoft's relational database
+Database Design,Databases,Structuring and organizing database schemas
+Database Administration,Databases,Managing and maintaining database systems
+iOS Development,Mobile Development,Building applications for Apple devices
+Android Development,Mobile Development,Building applications for Android devices
+React Native,Mobile Development,Cross-platform mobile framework using React
+Flutter,Mobile Development,Google's UI toolkit for cross-platform apps
+Xamarin,Mobile Development,Microsoft's cross-platform mobile framework
+Swift UI,Mobile Development,Apple's UI framework for iOS development
+Kotlin Multiplatform,Mobile Development,Kotlin for cross-platform development
+Mobile UI Design,Mobile Development,Designing user interfaces for mobile devices
+App Store Optimization,Mobile Development,Optimizing app visibility in stores
+Mobile Testing,Mobile Development,Testing mobile applications
+Cybersecurity,Cybersecurity,Protecting systems and data from threats
+Penetration Testing,Cybersecurity,Ethical hacking to find vulnerabilities
+Network Security,Cybersecurity,Protecting network infrastructure
+Information Security,Cybersecurity,Protecting information from unauthorized access
+Cryptography,Cybersecurity,Securing communication through encryption
+Ethical Hacking,Cybersecurity,Authorized hacking to test security
+Security Auditing,Cybersecurity,Examining security measures and policies
+Firewall Configuration,Cybersecurity,Setting up network security barriers
+Intrusion Detection,Cybersecurity,Monitoring for malicious activities
+Security Compliance,Cybersecurity,Meeting security standards and regulations
+Linux Administration,System Administration,Managing Linux-based systems
+Unix,System Administration,Operating system and administration
+System Administration,System Administration,Managing computer systems and servers
+Network Administration,System Administration,Managing network infrastructure
+Server Management,System Administration,Deploying and maintaining servers
+Shell Scripting,System Administration,Automating tasks with command-line scripts
+Active Directory,System Administration,Microsoft directory service
+DNS Management,System Administration,Managing domain name systems
+Load Balancing,System Administration,Distributing network traffic
+Virtualization,System Administration,Creating virtual computing resources
+Git,Software Engineering,Distributed version control system
+Agile Methodology,Software Engineering,Iterative software development approach
+Scrum,Software Engineering,Agile framework for project management
+Software Testing,Software Engineering,Verifying software quality and functionality
+Unit Testing,Software Engineering,Testing individual components
+Integration Testing,Software Engineering,Testing component interactions
+Test-Driven Development,Software Engineering,Writing tests before code
+Code Review,Software Engineering,Peer examination of source code
+Design Patterns,Software Engineering,Reusable software design solutions
+Algorithms,Software Engineering,Step-by-step problem-solving procedures
+Data Structures,Software Engineering,Organizing and storing data efficiently
+Object-Oriented Programming,Software Engineering,Programming paradigm using objects
+Functional Programming,Software Engineering,Programming paradigm using functions
+RESTful API,Software Engineering,Web API architectural style
+GraphQL,Software Engineering,Query language for APIs
+Microservices,Software Engineering,Architectural style for distributed systems
+Software Architecture,Software Engineering,High-level software structure design
+API Design,Software Engineering,Designing application programming interfaces
+Code Optimization,Software Engineering,Improving code efficiency
+Refactoring,Software Engineering,Restructuring code without changing behavior
+Blockchain,Blockchain,Distributed ledger technology
+Ethereum,Blockchain,Decentralized blockchain platform
+Solidity,Blockchain,Programming language for smart contracts
+Smart Contracts,Blockchain,Self-executing contracts on blockchain
+Web3,Blockchain,Decentralized web technologies
+Cryptocurrency,Blockchain,Digital currency using cryptography
+DeFi,Blockchain,Decentralized finance applications
+NFT Development,Blockchain,Non-fungible token creation
+Unity,Game Development,Cross-platform game engine
+Unreal Engine,Game Development,Advanced game development engine
+Game Design,Game Development,Designing gameplay mechanics and experiences
+3D Modeling,Game Development,Creating three-dimensional digital models
+Game Physics,Game Development,Simulating realistic physics in games
+C++ Game Programming,Game Development,Game development using C++
+Godot Engine,Game Development,Open-source game engine
+UI/UX Design,Design,User interface and experience design
+Figma,Design,Collaborative design tool
+Adobe XD,Design,UI/UX design and prototyping tool
+Sketch,Design,Digital design toolkit for Mac
+Photoshop,Design,Image editing and graphic design software
+Illustrator,Design,Vector graphics editor
+Responsive Design,Design,Designing for multiple screen sizes
+Wireframing,Design,Creating basic layout sketches
+Prototyping,Design,Building interactive design models
+User Research,Design,Studying user behavior and needs
+API Development,Backend Development,Building application programming interfaces
+Microservices Architecture,Backend Development,Designing distributed service systems
+Authentication,Backend Development,Verifying user identity
+Authorization,Backend Development,Managing user permissions
+OAuth,Backend Development,Open standard for authorization
+JWT,Backend Development,JSON Web Tokens for authentication
+WebSockets,Backend Development,Two-way communication protocol
+Message Queues,Backend Development,Asynchronous communication systems
+Caching,Backend Development,Storing data for quick access
+Performance Optimization,Backend Development,Improving application speed
+Selenium,Testing,Web application testing framework
+Jest,Testing,JavaScript testing framework
+Pytest,Testing,Python testing framework
+Cypress,Testing,End-to-end testing framework
+Load Testing,Testing,Testing system under heavy load
+Performance Testing,Testing,Measuring system performance
+Security Testing,Testing,Testing for security vulnerabilities
+Automated Testing,Testing,Using software to test software
+Test Automation,Testing,Automating test execution
+Quality Assurance,Testing,Ensuring software quality standards
+R Programming,Data Science,Statistical programming language
+MATLAB,Data Science,Numerical computing environment
+Apache Spark,Data Science,Large-scale data processing engine
+Hadoop,Data Science,Distributed data processing framework
+Tableau,Data Science,Data visualization software
+Power BI,Data Science,Business analytics service
+Data Mining,Data Science,Discovering patterns in large datasets
+Predictive Analytics,Data Science,Using data to predict future outcomes
+Time Series Analysis,Data Science,Analyzing time-ordered data
+Regression Analysis,Data Science,Statistical modeling technique
+ETL,Data Science,Extract Transform Load data processes
+Data Warehousing,Data Science,Centralized data storage
+Apache Kafka,Data Science,Distributed streaming platform
+Airflow,Data Science,Workflow automation platform
+FastAPI,Web Development,Modern Python web framework
+Spring Boot,Web Development,Java framework for microservices
+ASP.NET,Web Development,Microsoft web framework
+Laravel,Web Development,PHP web framework
+Ruby on Rails,Web Development,Ruby web framework
+GraphQL API,Web Development,Query language for APIs
+WebAssembly,Web Development,Binary instruction format for web
+Progressive Web Apps,Web Development,Web apps with native-like features
+JAMstack,Web Development,Modern web development architecture
+Webpack,Web Development,Module bundler for JavaScript
+Babel,Web Development,JavaScript compiler
+TypeScript Configuration,Web Development,Setting up TypeScript projects
+ESLint,Web Development,JavaScript linting tool
+Prettier,Web Development,Code formatter
+Redis Cache,Databases,In-memory caching with Redis
+MongoDB Atlas,Databases,Cloud-hosted MongoDB service
+PostgreSQL Optimization,Databases,Performance tuning for PostgreSQL
+Database Indexing,Databases,Optimizing database query performance
+Query Optimization,Databases,Improving database query efficiency
+Database Replication,Databases,Copying data across databases
+Database Sharding,Databases,Partitioning data across databases
+NoSQL Design,Databases,Designing non-relational databases
+Time-Series Databases,Databases,Databases optimized for time-series data
+Graph Databases,Databases,Databases for connected data
+OpenCV,Computer Vision,Computer vision library
+Image Processing,Computer Vision,Manipulating digital images
+Object Detection,Computer Vision,Identifying objects in images
+Face Recognition,Computer Vision,Identifying human faces
+OCR,Computer Vision,Optical character recognition
+Video Processing,Computer Vision,Analyzing and manipulating video
+YOLO,Computer Vision,Real-time object detection system
+BERT,Natural Language Processing,Language representation model
+GPT,Natural Language Processing,Generative pre-trained transformer
+Text Classification,Natural Language Processing,Categorizing text documents
+Sentiment Analysis,Natural Language Processing,Determining emotional tone
+Named Entity Recognition,Natural Language Processing,Identifying entities in text
+Text Generation,Natural Language Processing,Creating human-like text
+Speech Recognition,Natural Language Processing,Converting speech to text
+Machine Translation,Natural Language Processing,Translating between languages
+Question Answering,Natural Language Processing,Building QA systems
+Chatbot Development,Natural Language Processing,Creating conversational AI
+Reinforcement Learning,Machine Learning,Learning through trial and error
+Supervised Learning,Machine Learning,Learning from labeled data
+Unsupervised Learning,Machine Learning,Finding patterns in unlabeled data
+Neural Networks,Machine Learning,Computing systems inspired by brains
+Convolutional Neural Networks,Machine Learning,Neural networks for image processing
+Recurrent Neural Networks,Machine Learning,Neural networks for sequence data
+Transfer Learning,Machine Learning,Applying learned knowledge to new tasks
+Model Deployment,Machine Learning,Deploying ML models to production
+Feature Engineering,Machine Learning,Creating features from raw data
+Hyperparameter Tuning,Machine Learning,Optimizing model parameters
+Kubernetes Deployment,Cloud Computing,Deploying apps with Kubernetes
+Docker Compose,Cloud Computing,Multi-container Docker applications
+Container Orchestration,Cloud Computing,Managing containerized applications
+Service Mesh,Cloud Computing,Infrastructure layer for microservices
+Cloud Security,Cloud Computing,Securing cloud infrastructure
+Cloud Migration,Cloud Computing,Moving to cloud platforms
+Serverless Architecture,Cloud Computing,Building without managing servers
+Infrastructure as Code,Cloud Computing,Managing infrastructure with code
+Cloud Cost Optimization,Cloud Computing,Reducing cloud expenses
+Multi-Cloud Strategy,Cloud Computing,Using multiple cloud providers
+Bash Scripting,System Administration,Unix shell scripting
+PowerShell,System Administration,Windows task automation framework
+Monitoring Tools,DevOps,Systems for tracking application health
+Log Management,DevOps,Collecting and analyzing logs
+Incident Response,DevOps,Handling system incidents
+Site Reliability Engineering,DevOps,Engineering for reliable systems
+Configuration Management,DevOps,Managing system configurations
+Release Management,DevOps,Managing software releases
+Build Automation,DevOps,Automating software builds
+Deployment Automation,DevOps,Automating software deployment
+Jira,Project Management,Issue and project tracking software
+Confluence,Project Management,Team collaboration software
+Trello,Project Management,Visual project management tool
+Asana,Project Management,Work management platform
+Project Planning,Project Management,Planning project scope and timeline
+Risk Management,Project Management,Identifying and mitigating risks
+Stakeholder Management,Project Management,Managing project stakeholders
+Sprint Planning,Project Management,Planning agile sprints
+Backlog Management,Project Management,Organizing and prioritizing work
+Team Leadership,Project Management,Leading and managing teams
+Technical Writing,Documentation,Writing technical documentation
+API Documentation,Documentation,Documenting APIs for developers
+Code Documentation,Documentation,Documenting source code
+User Manuals,Documentation,Writing end-user documentation
+Architecture Documentation,Documentation,Documenting system architecture
+Markdown,Documentation,Lightweight markup language
+Swagger,Documentation,API documentation framework
+ReadTheDocs,Documentation,Documentation hosting platform
+Version Control,Software Engineering,Managing code versions
+Continuous Integration,DevOps,Automatically integrating code changes
+Continuous Deployment,DevOps,Automatically deploying to production
+Blue-Green Deployment,DevOps,Deployment strategy for zero downtime
+Canary Deployment,DevOps,Gradual rollout deployment strategy
+Feature Flags,DevOps,Toggling features without deployment
+A/B Testing Framework,DevOps,Testing variations in production
+Chaos Engineering,DevOps,Testing system resilience
+Observability,DevOps,Understanding system internal state
+Distributed Tracing,DevOps,Tracking requests across services
+iOS Swift,Mobile Development,Swift programming for iOS
+Android Kotlin,Mobile Development,Kotlin programming for Android
+Mobile Performance,Mobile Development,Optimizing mobile app performance
+Push Notifications,Mobile Development,Sending notifications to devices
+In-App Purchases,Mobile Development,Implementing app monetization
+Mobile Analytics,Mobile Development,Tracking mobile app usage
+App Security,Mobile Development,Securing mobile applications
+Offline-First Development,Mobile Development,Building apps that work offline
+Mobile CI/CD,Mobile Development,Continuous integration for mobile
+Responsive Mobile Design,Mobile Development,Designing for various screen sizes
+Webpack Configuration,Frontend Development,Configuring Webpack bundler
+State Management,Frontend Development,Managing application state
+Redux,Frontend Development,State management library
+MobX,Frontend Development,Reactive state management
+Vue Router,Frontend Development,Routing for Vue.js applications
+React Router,Frontend Development,Routing for React applications
+Frontend Testing,Frontend Development,Testing frontend code
+Accessibility,Frontend Development,Making web content accessible
+Cross-Browser Compatibility,Frontend Development,Ensuring browser compatibility
+Progressive Enhancement,Frontend Development,Building for basic then enhanced
+SQL,Databases,Structured Query Language for databases
+PL/SQL,Databases,Oracle procedural SQL extension
+T-SQL,Databases,Microsoft SQL Server extensions
+Database Backup,Databases,Creating database backups
+Database Recovery,Databases,Restoring databases from backups
+Data Migration,Databases,Moving data between systems
+Schema Design,Databases,Designing database schemas
+Stored Procedures,Databases,Precompiled database routines
+Database Triggers,Databases,Automated database responses
+Database Views,Databases,Virtual database tables
+SOLID Principles,Software Engineering,Object-oriented design principles
+Clean Code,Software Engineering,Writing readable and maintainable code
+Code Quality,Software Engineering,Ensuring high-quality code
+Technical Debt,Software Engineering,Managing code maintenance burden
+Pair Programming,Software Engineering,Two developers working together
+Code Standards,Software Engineering,Following coding conventions
+Software Estimation,Software Engineering,Estimating development time
+Software Metrics,Software Engineering,Measuring software quality
+Legacy Code,Software Engineering,Working with old codebases
+Code Migration,Software Engineering,Moving code to new platforms
+API Gateway,Backend Development,Managing API traffic and routing
+Service Discovery,Backend Development,Finding service instances
+Circuit Breaker,Backend Development,Preventing cascade failures
+Rate Limiting,Backend Development,Controlling request rates
+API Versioning,Backend Development,Managing API versions
+Event-Driven Architecture,Backend Development,System design using events
+CQRS,Backend Development,Command Query Responsibility Segregation
+Domain-Driven Design,Backend Development,Software design methodology
+Hexagonal Architecture,Backend Development,Ports and adapters architecture
+Clean Architecture,Backend Development,Robert Martin's architecture pattern
+RabbitMQ,Backend Development,Message broker software
+Apache ActiveMQ,Backend Development,Open-source message broker
+gRPC,Backend Development,High-performance RPC framework
+Protocol Buffers,Backend Development,Google's data serialization
+Apache Thrift,Backend Development,Interface definition language
+ZeroMQ,Backend Development,High-performance messaging library
+Nginx,Backend Development,Web server and reverse proxy
+Apache HTTP Server,Backend Development,Open-source web server
+Load Balancing Strategies,Backend Development,Distributing traffic efficiently
+Reverse Proxy,Backend Development,Intermediary server for requests
+CDN,Web Development,Content Delivery Network
+Edge Computing,Cloud Computing,Computing at network edge
+Serverless Functions,Cloud Computing,Function-as-a-Service
+Cloud Functions,Cloud Computing,Google Cloud Functions
+Azure Functions,Cloud Computing,Microsoft serverless compute
+API Management,Cloud Computing,Managing and securing APIs
+Cloud Monitoring,Cloud Computing,Monitoring cloud resources
+Cloud Logging,Cloud Computing,Centralized log management
+Cloud IAM,Cloud Computing,Identity and Access Management
+Cloud VPC,Cloud Computing,Virtual Private Cloud networking
+SIEM,Cybersecurity,Security Information Event Management
+Vulnerability Assessment,Cybersecurity,Identifying security weaknesses
+Threat Modeling,Cybersecurity,Identifying potential threats
+Incident Management,Cybersecurity,Handling security incidents
+Security Operations,Cybersecurity,Managing security infrastructure
+OWASP Top 10,Cybersecurity,Web application security risks
+SSL/TLS,Cybersecurity,Secure communication protocols
+Zero Trust Security,Cybersecurity,Never trust always verify model
+Security Automation,Cybersecurity,Automating security tasks
+Malware Analysis,Cybersecurity,Analyzing malicious software
+Forensic Analysis,Cybersecurity,Investigating security incidents
+Security Frameworks,Cybersecurity,Structured security approaches
+Compliance Auditing,Cybersecurity,Ensuring regulatory compliance
+Data Loss Prevention,Cybersecurity,Preventing data breaches
+Identity Management,Cybersecurity,Managing digital identities
+IoT Development,Embedded Systems,Internet of Things development
+Embedded C,Embedded Systems,C programming for embedded systems
+Raspberry Pi,Embedded Systems,Single-board computer programming
+Arduino,Embedded Systems,Microcontroller programming
+MQTT,Embedded Systems,IoT messaging protocol
+Edge AI,Embedded Systems,AI on edge devices
+Sensor Integration,Embedded Systems,Working with hardware sensors
+Real-Time Systems,Embedded Systems,Systems with timing constraints
+Firmware Development,Embedded Systems,Developing embedded firmware
+Hardware-Software Integration,Embedded Systems,Integrating hardware and software

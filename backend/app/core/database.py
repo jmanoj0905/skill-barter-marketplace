@@ -34,6 +34,7 @@ def init_connection_pool():
         connection_pool = psycopg2.pool.SimpleConnectionPool(
             minconn=1,
             maxconn=10,
+            sslmode="require",
             **DB_CONFIG
         )
         print("✓ Database connection pool created")
