@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 
 from backend.app.core.config import settings
 from backend.app.core.database import init_connection_pool, close_all_connections
-from backend.app.api.routes import matching, chat, skills  # NEW: added skills
+from backend.app.api.routes import matching, chat, skills,availability  # NEW: added skills
 
 
 # ============================================
@@ -71,6 +71,8 @@ app.include_router(matching.router, prefix="/api")
 
 # Phase 3: Chat (basic implementation)
 app.include_router(chat.router, prefix="/api")
+
+app.include_router(availability.router)
 
 
 # ============================================
