@@ -94,7 +94,7 @@ class MatchingService:
         Returns:
             List of match dictionaries with scores and explanations
         """
-        
+        category = self._get_skill_category(desired_skill)
         # Step 1: Get current user info
         current_user = self._get_user_info(user_id)
         if not current_user:
@@ -105,9 +105,10 @@ class MatchingService:
         
         # Step 3: Find users offering similar skills (vector similarity search)
         candidates = self._find_skill_candidates(
-            desired_embedding,
-            min_similarity,
-            exclude_user_id=user_id
+        desired_embedding,
+        min_similarity,
+        exclude_user_id=user_id,
+        category=category
         )
         
         if not candidates:
@@ -207,7 +208,8 @@ class MatchingService:
         self,
         desired_embedding: List[float],
         min_similarity: float,
-        exclude_user_id: int
+        exclude_user_id: int,
+        category: Optional[str] = None
     ) -> List[Dict]:
         """
         Find users offering skills similar to desired skill
@@ -228,25 +230,38 @@ class MatchingService:
             # 1 - distance = similarity score
             #
             # NEW: JOIN user_skills → skill_graph to get canonical embeddings
-            cursor.execute(
-                """
-                SELECT DISTINCT
-                    us.user_id,
-                    sg.skill_name,
-                    us.proficiency_level,
-                    1 - (sg.skill_embedding <=> %s::vector) as similarity
-                FROM user_skills us
-                JOIN skill_graph sg ON us.skill_graph_id = sg.id
-                WHERE us.skill_type = 'offer'
-                  AND us.user_id != %s
-                  AND sg.skill_embedding IS NOT NULL
-                  AND 1 - (sg.skill_embedding <=> %s::vector) >= %s
-                ORDER BY similarity DESC
-                LIMIT 20
-                """,
-                (embedding_str, exclude_user_id, embedding_str, min_similarity)
-            )
-            
+            query = """
+            SELECT DISTINCT
+                us.user_id,
+                sg.skill_name,
+                sg.skill_category,
+                us.proficiency_level,
+                1 - (sg.skill_embedding <=> %s::vector) as similarity
+            FROM user_skills us
+            JOIN skill_graph sg ON us.skill_graph_id = sg.id
+            WHERE us.skill_type = 'offer'
+            AND us.user_id != %s
+            AND sg.skill_embedding IS NOT NULL
+            """
+
+            params = [embedding_str, exclude_user_id]
+
+            # ✅ ADD CATEGORY FILTER
+            if category:
+                query += " AND sg.skill_category = %s"
+                params.append(category)
+
+            query += """
+            AND 1 - (sg.skill_embedding <=> %s::vector) >= %s
+            ORDER BY similarity DESC
+            LIMIT 20
+            """
+
+            params.extend([embedding_str, min_similarity])
+
+            cursor.execute(query, tuple(params))
+            #(embedding_str, exclude_user_id, embedding_str, min_similarity)
+                        
             return cursor.fetchall()
             
         finally:
@@ -579,6 +594,24 @@ class MatchingService:
             cursor.close()
             return_connection(conn)
 
+    def _get_skill_category(self, skill_name: str) -> Optional[str]:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+        try:
+            cursor.execute("""
+                SELECT skill_category
+                FROM skill_graph
+                WHERE skill_name ILIKE %s
+                LIMIT 1
+            """, (f"%{skill_name}%",))
+
+            result = cursor.fetchone()
+            return result['skill_category'] if result else None
+
+        finally:
+            cursor.close()
+            return_connection(conn)
 # Singleton instance
 _matching_service = None
 
