@@ -477,7 +477,19 @@ class SkillNormalizationService:
                 (embedding_str, f'%{query.lower()}%', embedding_str, limit)
             )
             
-            return cursor.fetchall()
+            rows = cursor.fetchall()
+
+            results = []
+            for row in rows:
+                results.append({
+                    "skill_graph_id": row["id"],  # FIX 1
+                    "skill_name": row["skill_name"],
+                    "skill_category": row["skill_category"],
+                    "popularity_score": row["popularity_score"],
+                    "similarity": row["relevance_score"]  # FIX 2 (use relevance for ranking)
+                })
+
+            return results
             
         finally:
             cursor.close()

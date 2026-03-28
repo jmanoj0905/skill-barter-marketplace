@@ -56,6 +56,7 @@ class AcceptMatchRequest(BaseModel):
 class AcceptMatchResponse(BaseModel):
     """Response after accepting a match"""
     barter_id: int
+    chat_id: int
     status: str
     user_a_id: int
     user_b_id: int
@@ -78,7 +79,7 @@ def get_current_user_id() -> int:
     TODO: Replace with actual JWT authentication from your auth system
     For now, returns hardcoded user ID for testing Phase 4
     """
-    return 1  # Alice for testing
+    return 7  # bob for testing
 
 
 # ============================================
@@ -97,6 +98,11 @@ async def find_matches(
     """
     try:
         matching_service = get_matching_service()
+        conn = get_connection()
+        try:
+            matching_service.validate_match_request(current_user_id, conn)
+        finally:
+            return_connection(conn)
         
         matches = matching_service.find_matches(
             user_id=current_user_id,

@@ -116,7 +116,6 @@ def clear_existing_data():
         'wallets',
         'trust_scores',
         'user_skills',       # NEW: must delete before skill_graph
-        'skill_graph',       # NEW: canonical skills
         'users'
     ]
     

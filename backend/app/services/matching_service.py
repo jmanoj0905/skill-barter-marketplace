@@ -9,6 +9,8 @@ from backend.app.core.database import get_connection, return_connection
 from psycopg2.extras import RealDictCursor
 import numpy as np
 import logging
+from datetime import datetime, timedelta
+
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,49 @@ class MatchingService:
     
     def __init__(self):
         self.embedding_service = get_embedding_service()
+
+    @staticmethod
+    def validate_match_request(user_id: int, conn):
+        """Validate user can request matches"""
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Check email + phone verified
+        cursor.execute(
+            "SELECT email_verified, phone_verified FROM users WHERE id = %s",
+            (user_id,)
+        )
+        user = cursor.fetchone()
+        if user and (not user.get('email_verified', True) or not user.get('phone_verified', True)):
+            print("[VALIDATION] email/phone not verified")
+
+        
+        # Check credits >= 20
+        cursor.execute(
+            "SELECT available_balance FROM wallets WHERE user_id = %s",
+            (user_id,)
+        )
+        wallet = cursor.fetchone()
+        if wallet and wallet.get('available_balance', 100) < 20:
+            print("[VALIDATION] low balance")
+        
+        # Optional: Check last match < 24 hours
+        cursor.execute(
+            """
+            SELECT proposed_at FROM matches 
+            WHERE user_a_id = %s 
+            ORDER BY proposed_at DESC 
+            LIMIT 1
+            """,
+            (user_id,)
+        )
+        last_match = cursor.fetchone()
+        if last_match:
+            time_diff = datetime.utcnow() - last_match['proposed_at']
+            if time_diff < timedelta(hours=24):
+                raise ValueError("Please wait 24 hours between match requests")
+        
+        cursor.close()
+        return True
     
     def find_matches(
         self,
@@ -36,7 +81,7 @@ class MatchingService:
         1. Generate embedding for desired skill
         2. Find users offering similar skills (vector search on skill_graph)
         3. Check mutual interest (do they want what you offer?)
-        4. Calculate match score (skill + trust + activity)
+        4. Calculate match score (skill + trust + activity+schedule)
         5. Generate human-readable explanation
         6. Return top matches sorted by score
         
@@ -74,6 +119,12 @@ class MatchingService:
             # Get candidate's full info
             candidate_info = self._get_user_info(candidate['user_id'])
             if not candidate_info:
+                continue
+            # 🚨 TRUST FILTERING
+            if not self._passes_trust_threshold(
+                current_user['trust_score'],
+                candidate_info['trust_score']
+            ):
                 continue
             
             # Check if candidate wants any skill current user offers
@@ -290,53 +341,49 @@ class MatchingService:
         skill_similarity: float,
         has_mutual_interest: bool
     ) -> float:
-        """
-        Calculate overall match score using multiple factors
-        
-        FIXED: Trust component now measures candidate reliability,
-               not similarity of trust levels (bug fix)
-        
-        Scoring formula:
-        - Skill similarity: weighted at 50%
-        - Trust score: weighted at 30% (FIXED: use candidate's trust directly)
-        - Activity level: weighted at 20%
-        - Mutual interest bonus: +10% if present
-        
-        Returns:
-            Score between 0.0 and 1.0
-        """
-        # Weight factors (must sum to 1.0)
-        W_SKILL = 0.50
-        W_TRUST = 0.30
-        W_ACTIVITY = 0.20
-        
-        # 1. Skill component (already calculated)
+
+        # ✅ Correct weights (as per your system design)
+        W_SKILL = 0.4
+        W_TRUST = 0.3
+        W_RELIABILITY = 0.2
+        W_SCHEDULE = 0.1  # will use in next step
+
+        # 1. Skill similarity
         skill_score = skill_similarity
-        
-        # 2. Trust compatibility component
-        # FIXED: Use candidate's trust score directly as quality signal
-        # Higher trust = better match (not penalize difference)
+
+        # 2. Trust score (candidate quality)
         trust_score = candidate['trust_score']
-        
-        # 3. Activity component
-        # Prefer users with some successful barters (shows reliability)
-        successful_barters = candidate.get('successful_barters', 0)
-        activity_score = min(successful_barters / 5.0, 1.0)  # Caps at 5 barters
-        
-        # 4. Calculate weighted score
+
+        # 3. Reliability (NEW - replaces activity)
+        completed = candidate.get('successful_barters', 0)
+        disputes = candidate.get('disputed_barters', 0)
+
+        total = completed + disputes
+        if total == 0:
+            reliability = 0.5
+        else:
+            reliability = completed / total
+
+        # 4. Schedule overlap (placeholder for now)
+        schedule_overlap = self._calculate_schedule_overlap(
+        current_user['user_id'],
+        candidate['user_id']
+        )
+
+        # 5. Final score
         composite_score = (
             W_SKILL * skill_score +
             W_TRUST * trust_score +
-            W_ACTIVITY * activity_score
+            W_RELIABILITY * reliability +
+            W_SCHEDULE * schedule_overlap
         )
-        
-        # 5. Boost for mutual interest
+
+        # 6. Mutual interest boost
         if has_mutual_interest:
-            # Perfect mutual matches get a 10% bonus
             composite_score = min(composite_score * 1.10, 1.0)
-        
+
         return round(composite_score, 3)
-    
+        
     def _generate_explanation(
         self,
         candidate: Dict,
@@ -478,6 +525,59 @@ class MatchingService:
             cursor.close()
             return_connection(conn)
 
+    def _passes_trust_threshold(self, user_a_trust, candidate_trust):
+        if user_a_trust < 0.4:
+            min_threshold = 0.4
+        elif user_a_trust < 0.6:
+            min_threshold = 0.5
+        else:
+            min_threshold = 0.3
+
+        return candidate_trust >= min_threshold
+
+    def _calculate_schedule_overlap(self, user_a_id: int, user_b_id: int) -> float:
+        """
+        Returns overlap score between 0.0 and 1.0
+        """
+
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+        try:
+            cursor.execute("""
+                SELECT a.day_of_week,
+                    GREATEST(a.start_time, b.start_time) AS overlap_start,
+                    LEAST(a.end_time, b.end_time) AS overlap_end
+                FROM availability a
+                JOIN availability b
+                ON a.day_of_week = b.day_of_week
+                AND a.start_time < b.end_time
+                AND a.end_time > b.start_time
+                WHERE a.user_id = %s AND b.user_id = %s
+            """, (user_a_id, user_b_id))
+
+            rows = cursor.fetchall()
+
+            if not rows:
+                return 0.0
+
+            total_overlap_minutes = 0
+
+            for r in rows:
+                start = r['overlap_start']
+                end = r['overlap_end']
+
+                start_min = start.hour * 60 + start.minute
+                end_min = end.hour * 60 + end.minute
+
+                total_overlap_minutes += max(0, end_min - start_min)
+
+            # Normalize: 10 hours/week = 1.0
+            return min(total_overlap_minutes / 600.0, 1.0)
+
+        finally:
+            cursor.close()
+            return_connection(conn)
 
 # Singleton instance
 _matching_service = None
@@ -490,3 +590,4 @@ def get_matching_service() -> MatchingService:
     if _matching_service is None:
         _matching_service = MatchingService()
     return _matching_service
+
