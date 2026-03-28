@@ -171,7 +171,12 @@ class MatchingService:
         matches.sort(key=lambda x: x['match_score'], reverse=True)
         
         # Step 6: Return top matches
-        return matches[:max_results]
+        top_matches = matches[:max_results]
+
+        # ✅ store matches in DB
+        self._store_matches(user_id, top_matches)
+
+        return top_matches
     
     def _get_user_info(self, user_id: int) -> Optional[Dict]:
         """
@@ -619,8 +624,9 @@ class MatchingService:
 
         try:
             cursor.execute("""
-                INSERT INTO matches (user_a_id, user_b_id, status)
-                VALUES (%s, %s, 'accepted')
+                UPDATE matches
+                SET status = 'accepted'
+                WHERE user_a_id = %s AND user_b_id = %s
                 RETURNING id
             """, (requester_id, partner_id))
 
@@ -628,6 +634,44 @@ class MatchingService:
             conn.commit()
 
             return match_id
+
+        finally:
+            cursor.close()
+            return_connection(conn)
+
+    def reject_match_record(self, requester_id: int, partner_id: int):
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                UPDATE matches
+                SET status = 'rejected'
+                WHERE user_a_id = %s AND user_b_id = %s
+                RETURNING id
+            """, (requester_id, partner_id))
+            match_id = cursor.fetchone()[0]
+            conn.commit()
+
+            return match_id
+
+        finally:
+            cursor.close()
+            return_connection(conn)
+
+    def _store_matches(self, requester_id: int, matches: List[Dict]):
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        try:
+            for match in matches:
+                cursor.execute("""
+                    INSERT INTO matches (user_a_id, user_b_id, status)
+                    VALUES (%s, %s, 'pending')
+                    ON CONFLICT DO NOTHING
+                """, (requester_id, match['user_id']))
+
+            conn.commit()
 
         finally:
             cursor.close()

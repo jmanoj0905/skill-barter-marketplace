@@ -225,10 +225,16 @@ async def reject_match(
         raise HTTPException(status_code=400, detail="Cannot reject yourself")
 
     # Phase 4 design choice:
-    # Matching is ephemeral → no DB write here
+    matching_service = get_matching_service()
+
+    match_id = matching_service.reject_match_record(
+        requester_id=current_user_id,
+        partner_id=request.candidate_user_id
+    )
 
     return {
-        "message": "Match rejected successfully"
+        "message": "Match rejected successfully",
+        "match_id": match_id
     }
 
 
