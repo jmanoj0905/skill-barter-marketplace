@@ -158,7 +158,14 @@ async def accept_match(
     if existing:
         raise HTTPException(status_code=400, detail="Active barter already exists with this user")
     
-    # Create barter
+    # Step 1: create match record
+    matching_service = get_matching_service()
+    match_id = matching_service._create_match_record(
+        requester_id=current_user_id,
+        partner_id=request.match_user_id
+    )
+
+    # Step 2: create barter
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
@@ -185,7 +192,7 @@ async def accept_match(
             skill_a=barter['skill_a'],
             skill_b=barter['skill_b'],
             proposed_at=barter['proposed_at'].isoformat() + 'Z',
-            message=f"Match created! You can now chat with {user_check[0]['name']}"
+            message=f"Match accepted! (Match ID: {match_id}) You can now chat with {user_check[0]['name']}"
         )
         
     except Exception as e:

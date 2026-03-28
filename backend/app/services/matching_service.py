@@ -612,6 +612,26 @@ class MatchingService:
         finally:
             cursor.close()
             return_connection(conn)
+
+    def _create_match_record(self, requester_id: int, partner_id: int):
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                INSERT INTO matches (user_a_id, user_b_id, status)
+                VALUES (%s, %s, 'accepted')
+                RETURNING id
+            """, (requester_id, partner_id))
+
+            match_id = cursor.fetchone()[0]
+            conn.commit()
+
+            return match_id
+
+        finally:
+            cursor.close()
+            return_connection(conn)
 # Singleton instance
 _matching_service = None
 
