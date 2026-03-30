@@ -1,6 +1,12 @@
 """
-Matching Service (Updated for skill_graph + user_skills schema)
-Finds compatible barter partners using semantic skill matching
+Matching Service (Phase 2 complete)
+Fixes:
+  - BUG-1: _create_match_record crashed when no pending row existed (TypeError on None[0])
+  - BUG-2: reject_match_record crashed same way
+  - BUG-3: validate_match_request queried 'proposed_at' which didn't exist in matches table
+  - BUG-4: _store_matches ON CONFLICT had no conflict target (needs UNIQUE constraint)
+  - FEAT-2.3.5: matches table now stores match_score, skill_a/b_teaches, proposed_at,
+                accepted_at, expires_at as required by the implementation plan
 """
 
 from typing import List, Dict, Optional
@@ -17,56 +23,76 @@ logger = logging.getLogger(__name__)
 
 class MatchingService:
     """
-    Service for finding and scoring potential barter partners
-    Uses AI embeddings for semantic skill matching with normalized skill_graph
+    Service for finding and scoring potential barter partners.
+    Uses AI embeddings for semantic skill matching with normalized skill_graph.
     """
-    
+
     def __init__(self):
         self.embedding_service = get_embedding_service()
 
+    # ------------------------------------------------------------------ #
+    # FEAT-2.3.2  Validate match request                                  #
+    # ------------------------------------------------------------------ #
+
     @staticmethod
     def validate_match_request(user_id: int, conn):
-        """Validate user can request matches"""
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
-        # Check email + phone verified
-        cursor.execute(
-            "SELECT email_verified, phone_verified FROM users WHERE id = %s",
-            (user_id,)
-        )
-        user = cursor.fetchone()
-        if user and (not user.get('email_verified', True) or not user.get('phone_verified', True)):
-            print("[VALIDATION] email/phone not verified")
+        """
+        Validate that a user is allowed to request matches.
 
-        
-        # Check credits >= 20
-        cursor.execute(
-            "SELECT available_balance FROM wallets WHERE user_id = %s",
-            (user_id,)
-        )
-        wallet = cursor.fetchone()
-        if wallet and wallet.get('available_balance', 100) < 20:
-            print("[VALIDATION] low balance")
-        
-        # Optional: Check last match < 24 hours
-        cursor.execute(
-            """
-            SELECT proposed_at FROM matches 
-            WHERE user_a_id = %s 
-            ORDER BY proposed_at DESC 
-            LIMIT 1
-            """,
-            (user_id,)
-        )
-        last_match = cursor.fetchone()
-        if last_match:
-            time_diff = datetime.utcnow() - last_match['proposed_at']
-            if time_diff < timedelta(hours=24):
-                raise ValueError("Please wait 24 hours between match requests")
-        
-        cursor.close()
-        return True
-    
+        BUG-3 FIX: the old code queried `proposed_at` which didn't exist.
+        Now uses the correct column name after the migration adds it.
+        Also softened email/phone check to a warning (not all test users
+        will have those fields set in the seed data).
+        """
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+        try:
+            # Check email + phone verified (soft warning only — seed users may not have it)
+            cursor.execute(
+                "SELECT email_verified, phone_verified FROM users WHERE id = %s",
+                (user_id,)
+            )
+            user = cursor.fetchone()
+            if user:
+                if not user.get('email_verified', True):
+                    logger.warning("[VALIDATION] user %s email not verified", user_id)
+                if not user.get('phone_verified', True):
+                    logger.warning("[VALIDATION] user %s phone not verified", user_id)
+
+            # Check credits >= 20
+            cursor.execute(
+                "SELECT available_balance FROM wallets WHERE user_id = %s",
+                (user_id,)
+            )
+            wallet = cursor.fetchone()
+            if wallet and wallet.get('available_balance', 100) < 20:
+                raise ValueError("Insufficient credits (minimum 20 required)")
+
+            # BUG-3 FIX: 'proposed_at' now exists after migration (was missing before)
+            cursor.execute(
+                """
+                SELECT proposed_at FROM matches
+                WHERE user_a_id = %s
+                  AND proposed_at IS NOT NULL
+                ORDER BY proposed_at DESC
+                LIMIT 1
+                """,
+                (user_id,)
+            )
+            last_match = cursor.fetchone()
+            if last_match and last_match.get('proposed_at'):
+                time_diff = datetime.utcnow() - last_match['proposed_at']
+                if time_diff < timedelta(hours=24):
+                    raise ValueError("Please wait 24 hours between match requests")
+
+            return True
+        finally:
+            cursor.close()
+
+    # ------------------------------------------------------------------ #
+    # FEAT-2.2 / 2.3.1  Core matching pipeline                           #
+    # ------------------------------------------------------------------ #
+
     def find_matches(
         self,
         user_id: int,
@@ -75,74 +101,57 @@ class MatchingService:
         max_results: int = 10
     ) -> List[Dict]:
         """
-        Find potential barter partners for a user
-        
+        Find potential barter partners for a user.
+
         Algorithm:
-        1. Generate embedding for desired skill
-        2. Find users offering similar skills (vector search on skill_graph)
-        3. Check mutual interest (do they want what you offer?)
-        4. Calculate match score (skill + trust + activity+schedule)
-        5. Generate human-readable explanation
-        6. Return top matches sorted by score
-        
-        Args:
-            user_id: Current user's ID
-            desired_skill: Skill the user wants to learn
-            min_similarity: Minimum skill similarity threshold (0.0-1.0)
-            max_results: Maximum number of matches to return
-            
-        Returns:
-            List of match dictionaries with scores and explanations
+          1. Generate embedding for desired skill
+          2. Optional category filter to narrow candidates
+          3. Vector similarity search in skill_graph
+          4. Trust threshold filter
+          5. Mutual interest check
+          6. Composite score (skill 0.4 + trust 0.3 + reliability 0.2 + schedule 0.1)
+          7. 10% boost for mutual interest
+          8. Sort, store results, return top N
         """
         category = self._get_skill_category(desired_skill)
-        # Step 1: Get current user info
+
         current_user = self._get_user_info(user_id)
         if not current_user:
             raise ValueError(f"User {user_id} not found")
-        
-        # Step 2: Generate embedding for desired skill
+
         desired_embedding = self.embedding_service.generate_embedding(desired_skill)
-        
-        # Step 3: Find users offering similar skills (vector similarity search)
+
         candidates = self._find_skill_candidates(
-        desired_embedding,
-        min_similarity,
-        exclude_user_id=user_id,
-        category=category
+            desired_embedding,
+            min_similarity,
+            exclude_user_id=user_id,
+            category=category
         )
-        
+
         if not candidates:
             return []
-        
-        # Step 4: Check mutual interest and calculate scores
+
         matches = []
         for candidate in candidates:
-            # Get candidate's full info
             candidate_info = self._get_user_info(candidate['user_id'])
             if not candidate_info:
                 continue
-            # 🚨 TRUST FILTERING
+
             if not self._passes_trust_threshold(
                 current_user['trust_score'],
                 candidate_info['trust_score']
             ):
                 continue
-            
-            # Check if candidate wants any skill current user offers
-            mutual_interest = self._check_mutual_interest(
-                user_id,
-                candidate['user_id']
-            )
-            
-            # Calculate match score
+
+            mutual_interest = self._check_mutual_interest(user_id, candidate['user_id'])
+
             match_score = self._calculate_match_score(
                 current_user=current_user,
                 candidate=candidate_info,
                 skill_similarity=candidate['similarity'],
                 has_mutual_interest=mutual_interest is not None
             )
-            
-            # Generate explanation
+
             explanation = self._generate_explanation(
                 candidate_info,
                 desired_skill,
@@ -150,9 +159,8 @@ class MatchingService:
                 candidate['similarity'],
                 mutual_interest
             )
-            
-            # Build match object
-            match = {
+
+            matches.append({
                 'user_id': candidate_info['user_id'],
                 'name': candidate_info['name'],
                 'trust_score': candidate_info['trust_score'],
@@ -162,53 +170,54 @@ class MatchingService:
                 'skill_similarity': round(candidate['similarity'], 3),
                 'has_mutual_interest': mutual_interest is not None,
                 'mutual_skill': mutual_interest,
-                'compatibility_reason': explanation
-            }
-            
-            matches.append(match)
-        
-        # Step 5: Sort by match score (highest first)
+                'compatibility_reason': explanation,
+                # extra fields needed for _store_matches (FEAT-2.3.5)
+                '_desired_skill': desired_skill,
+                '_their_skill': candidate['skill_name'],
+            })
+
         matches.sort(key=lambda x: x['match_score'], reverse=True)
-        
-        # Step 6: Return top matches
         top_matches = matches[:max_results]
 
-        # ✅ store matches in DB
+        # Persist match records (FEAT-2.3.5 full schema)
         self._store_matches(user_id, top_matches)
 
+        # Strip internal-only keys before returning
+        for m in top_matches:
+            m.pop('_desired_skill', None)
+            m.pop('_their_skill', None)
+
         return top_matches
-    
+
+    # ------------------------------------------------------------------ #
+    # DB helpers                                                          #
+    # ------------------------------------------------------------------ #
+
     def _get_user_info(self, user_id: int) -> Optional[Dict]:
-        """
-        Get user's basic information and trust score
-        """
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
         try:
             cursor.execute(
                 """
-                SELECT 
+                SELECT
                     u.id as user_id,
                     u.name,
                     u.email,
                     u.trust_score,
-                    COALESCE(ts.successful_barters, 0) as successful_barters,
-                    COALESCE(ts.disputed_barters, 0) as disputed_barters,
-                    COALESCE(ts.average_rating, 0.0) as average_rating
+                    COALESCE(ts.successful_barters, 0)  as successful_barters,
+                    COALESCE(ts.disputed_barters,   0)  as disputed_barters,
+                    COALESCE(ts.average_rating,     0.0) as average_rating
                 FROM users u
                 LEFT JOIN trust_scores ts ON u.id = ts.user_id
                 WHERE u.id = %s
                 """,
                 (user_id,)
             )
-            
             return cursor.fetchone()
-            
         finally:
             cursor.close()
             return_connection(conn)
-    
+
     def _find_skill_candidates(
         self,
         desired_embedding: List[float],
@@ -216,144 +225,246 @@ class MatchingService:
         exclude_user_id: int,
         category: Optional[str] = None
     ) -> List[Dict]:
-        """
-        Find users offering skills similar to desired skill
-        
-        NEW: Queries skill_graph (canonical embeddings) joined with user_skills
-        
-        Returns list of candidates with their skill info and similarity scores
-        """
+        """Vector similarity search through pgvector on skill_graph."""
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
         try:
-            # Convert embedding to PostgreSQL vector format
             embedding_str = '[' + ','.join(map(str, desired_embedding)) + ']'
-            
-            # Vector similarity search using cosine distance
-            # <=> is the cosine distance operator from pgvector
-            # 1 - distance = similarity score
-            #
-            # NEW: JOIN user_skills → skill_graph to get canonical embeddings
-            query = """
-            SELECT DISTINCT
-                us.user_id,
-                sg.skill_name,
-                sg.skill_category,
-                us.proficiency_level,
-                1 - (sg.skill_embedding <=> %s::vector) as similarity
-            FROM user_skills us
-            JOIN skill_graph sg ON us.skill_graph_id = sg.id
-            WHERE us.skill_type = 'offer'
-            AND us.user_id != %s
-            AND sg.skill_embedding IS NOT NULL
-            """
 
+            query = """
+                SELECT DISTINCT
+                    us.user_id,
+                    sg.skill_name,
+                    sg.skill_category,
+                    us.proficiency_level,
+                    1 - (sg.skill_embedding <=> %s::vector) AS similarity
+                FROM user_skills us
+                JOIN skill_graph sg ON us.skill_graph_id = sg.id
+                WHERE us.skill_type = 'offer'
+                  AND us.user_id != %s
+                  AND sg.skill_embedding IS NOT NULL
+            """
             params = [embedding_str, exclude_user_id]
 
-            # ✅ ADD CATEGORY FILTER
             if category:
                 query += " AND sg.skill_category = %s"
                 params.append(category)
 
             query += """
-            AND 1 - (sg.skill_embedding <=> %s::vector) >= %s
-            ORDER BY similarity DESC
-            LIMIT 20
+                  AND 1 - (sg.skill_embedding <=> %s::vector) >= %s
+                ORDER BY similarity DESC
+                LIMIT 20
             """
-
             params.extend([embedding_str, min_similarity])
 
             cursor.execute(query, tuple(params))
-            #(embedding_str, exclude_user_id, embedding_str, min_similarity)
-                        
             return cursor.fetchall()
-            
         finally:
             cursor.close()
             return_connection(conn)
-    
+
     def _check_mutual_interest(
         self,
         user_a_id: int,
         user_b_id: int,
         min_similarity: float = 0.5
     ) -> Optional[str]:
-        """
-        Check if user B wants any skill that user A offers
-        
-        NEW: Queries through skill_graph for embeddings
-        
-        Returns:
-            Skill name if mutual interest found, None otherwise
-        """
+        """Return the best skill A offers that B wants, or None."""
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
         try:
-            # Get what user A offers (with embeddings from skill_graph)
             cursor.execute(
                 """
-                SELECT sg.skill_name, sg.skill_embedding::text as embedding
+                SELECT sg.skill_name, sg.skill_embedding::text AS embedding
                 FROM user_skills us
                 JOIN skill_graph sg ON us.skill_graph_id = sg.id
-                WHERE us.user_id = %s 
-                  AND us.skill_type = 'offer' 
+                WHERE us.user_id = %s AND us.skill_type = 'offer'
                   AND sg.skill_embedding IS NOT NULL
                 """,
                 (user_a_id,)
             )
             user_a_offers = cursor.fetchall()
-            
             if not user_a_offers:
                 return None
-            
-            # Get what user B wants (with embeddings from skill_graph)
+
             cursor.execute(
                 """
-                SELECT sg.skill_name, sg.skill_embedding::text as embedding
+                SELECT sg.skill_name, sg.skill_embedding::text AS embedding
                 FROM user_skills us
                 JOIN skill_graph sg ON us.skill_graph_id = sg.id
-                WHERE us.user_id = %s 
-                  AND us.skill_type = 'want' 
+                WHERE us.user_id = %s AND us.skill_type = 'want'
                   AND sg.skill_embedding IS NOT NULL
                 """,
                 (user_b_id,)
             )
             user_b_wants = cursor.fetchall()
-            
             if not user_b_wants:
                 return None
-            
-            # Convert string embeddings to lists
+
             for skill in user_a_offers:
                 skill['embedding'] = self._parse_pgvector(skill['embedding'])
-            
             for skill in user_b_wants:
                 skill['embedding'] = self._parse_pgvector(skill['embedding'])
-            
-            # Find best match between A's offers and B's wants
+
             best_match = None
-            best_similarity = 0.0
-            
+            best_sim = 0.0
             for offered in user_a_offers:
                 for wanted in user_b_wants:
-                    # Calculate similarity between offered and wanted skills
-                    similarity = self.embedding_service.calculate_similarity_from_embeddings(
-                        offered['embedding'],
-                        wanted['embedding']
+                    sim = self.embedding_service.calculate_similarity_from_embeddings(
+                        offered['embedding'], wanted['embedding']
                     )
-                    
-                    if similarity >= min_similarity and similarity > best_similarity:
-                        best_similarity = similarity
+                    if sim >= min_similarity and sim > best_sim:
+                        best_sim = sim
                         best_match = offered['skill_name']
-            
             return best_match
-            
         finally:
             cursor.close()
             return_connection(conn)
-    
+
+    # ------------------------------------------------------------------ #
+    # FEAT-2.3.5  Store full match record                                 #
+    # ------------------------------------------------------------------ #
+
+    def _store_matches(self, requester_id: int, matches: List[Dict]):
+        """
+        Persist match proposals to the matches table.
+
+        BUG-4 FIX: uses ON CONFLICT (user_a_id, user_b_id) DO UPDATE
+        so it requires the UNIQUE constraint added by migration_phase2_fix.sql.
+        Also now stores all FEAT-2.3.5 required fields.
+        """
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            expires = datetime.utcnow() + timedelta(days=7)
+            for match in matches:
+                cursor.execute(
+                    """
+                    INSERT INTO matches (
+                        user_a_id, user_b_id, status,
+                        match_score, skill_a_teaches, skill_b_teaches,
+                        proposed_at, expires_at
+                    )
+                    VALUES (%s, %s, 'pending', %s, %s, %s, %s, %s)
+                    ON CONFLICT (user_a_id, user_b_id)
+                    DO UPDATE SET
+                        match_score      = EXCLUDED.match_score,
+                        skill_a_teaches  = EXCLUDED.skill_a_teaches,
+                        skill_b_teaches  = EXCLUDED.skill_b_teaches,
+                        proposed_at      = EXCLUDED.proposed_at,
+                        expires_at       = EXCLUDED.expires_at,
+                        status           = CASE
+                            WHEN matches.status IN ('rejected', 'accepted') THEN matches.status
+                            ELSE 'pending'
+                        END
+                    """,
+                    (
+                        requester_id,
+                        match['user_id'],
+                        match['match_score'],
+                        match.get('_desired_skill'),   # what requester wants to learn
+                        match.get('_their_skill'),     # what candidate teaches
+                        datetime.utcnow(),
+                        expires,
+                    )
+                )
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            logger.error("Error storing matches: %s", e)
+        finally:
+            cursor.close()
+            return_connection(conn)
+
+    # ------------------------------------------------------------------ #
+    # FEAT-2.3.3  Accept match — create/update match record               #
+    # ------------------------------------------------------------------ #
+
+    def _create_match_record(self, requester_id: int, partner_id: int) -> Optional[int]:
+        """
+        Mark an existing pending match as accepted, or insert one if missing.
+
+        BUG-1 FIX: old code did UPDATE...RETURNING id then cursor.fetchone()[0]
+        which crashed with TypeError when no row existed.  Now uses UPSERT so
+        there is always a row, and handles the None case defensively.
+        """
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            # Try to update existing pending row first
+            cursor.execute(
+                """
+                UPDATE matches
+                SET status = 'accepted', accepted_at = %s
+                WHERE user_a_id = %s AND user_b_id = %s
+                RETURNING id
+                """,
+                (datetime.utcnow(), requester_id, partner_id)
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                # No pending row yet — insert a new accepted record
+                cursor.execute(
+                    """
+                    INSERT INTO matches (user_a_id, user_b_id, status, proposed_at, accepted_at)
+                    VALUES (%s, %s, 'accepted', %s, %s)
+                    ON CONFLICT (user_a_id, user_b_id)
+                    DO UPDATE SET status = 'accepted', accepted_at = EXCLUDED.accepted_at
+                    RETURNING id
+                    """,
+                    (requester_id, partner_id, datetime.utcnow(), datetime.utcnow())
+                )
+                row = cursor.fetchone()
+
+            conn.commit()
+            return row[0] if row else None
+        except Exception as e:
+            conn.rollback()
+            logger.error("Error creating match record: %s", e)
+            return None
+        finally:
+            cursor.close()
+            return_connection(conn)
+
+    # ------------------------------------------------------------------ #
+    # FEAT-2.3.4  Reject match                                            #
+    # ------------------------------------------------------------------ #
+
+    def reject_match_record(self, requester_id: int, partner_id: int) -> Optional[int]:
+        """
+        Mark a match as rejected.
+
+        BUG-2 FIX: same TypeError as _create_match_record — cursor.fetchone()[0]
+        crashed when no row matched.  Now checks for None before indexing.
+        """
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """
+                UPDATE matches
+                SET status = 'rejected'
+                WHERE user_a_id = %s AND user_b_id = %s
+                RETURNING id
+                """,
+                (requester_id, partner_id)
+            )
+            row = cursor.fetchone()
+            conn.commit()
+            return row[0] if row else None      # BUG-2 FIX: guard against None
+        except Exception as e:
+            conn.rollback()
+            logger.error("Error rejecting match: %s", e)
+            return None
+        finally:
+            cursor.close()
+            return_connection(conn)
+
+    # ------------------------------------------------------------------ #
+    # Scoring helpers                                                     #
+    # ------------------------------------------------------------------ #
+
     def _calculate_match_score(
         self,
         current_user: Dict,
@@ -361,49 +472,76 @@ class MatchingService:
         skill_similarity: float,
         has_mutual_interest: bool
     ) -> float:
+        W_SKILL, W_TRUST, W_RELIABILITY, W_SCHEDULE = 0.4, 0.3, 0.2, 0.1
 
-        # ✅ Correct weights (as per your system design)
-        W_SKILL = 0.4
-        W_TRUST = 0.3
-        W_RELIABILITY = 0.2
-        W_SCHEDULE = 0.1  # will use in next step
+        skill_score  = skill_similarity
+        trust_score  = candidate['trust_score']
 
-        # 1. Skill similarity
-        skill_score = skill_similarity
-
-        # 2. Trust score (candidate quality)
-        trust_score = candidate['trust_score']
-
-        # 3. Reliability (NEW - replaces activity)
         completed = candidate.get('successful_barters', 0)
-        disputes = candidate.get('disputed_barters', 0)
+        disputes  = candidate.get('disputed_barters', 0)
+        total     = completed + disputes
+        reliability = (completed / total) if total > 0 else 0.5
 
-        total = completed + disputes
-        if total == 0:
-            reliability = 0.5
-        else:
-            reliability = completed / total
-
-        # 4. Schedule overlap (placeholder for now)
         schedule_overlap = self._calculate_schedule_overlap(
-        current_user['user_id'],
-        candidate['user_id']
+            current_user['user_id'], candidate['user_id']
         )
 
-        # 5. Final score
-        composite_score = (
-            W_SKILL * skill_score +
-            W_TRUST * trust_score +
+        score = (
+            W_SKILL       * skill_score +
+            W_TRUST       * trust_score +
             W_RELIABILITY * reliability +
-            W_SCHEDULE * schedule_overlap
+            W_SCHEDULE    * schedule_overlap
         )
 
-        # 6. Mutual interest boost
         if has_mutual_interest:
-            composite_score = min(composite_score * 1.10, 1.0)
+            score = min(score * 1.10, 1.0)
 
-        return round(composite_score, 3)
-        
+        return round(score, 3)
+
+    def _calculate_schedule_overlap(self, user_a_id: int, user_b_id: int) -> float:
+        """Returns weekly overlap score 0.0–1.0 (10 hrs/week = 1.0)."""
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    GREATEST(a.start_time, b.start_time) AS overlap_start,
+                    LEAST(a.end_time,   b.end_time)      AS overlap_end
+                FROM availability a
+                JOIN availability b
+                  ON a.day_of_week = b.day_of_week
+                 AND a.start_time  < b.end_time
+                 AND a.end_time    > b.start_time
+                WHERE a.user_id = %s AND b.user_id = %s
+                """,
+                (user_a_id, user_b_id)
+            )
+            rows = cursor.fetchall()
+            if not rows:
+                return 0.0
+
+            total_minutes = sum(
+                max(0,
+                    (r['overlap_end'].hour * 60 + r['overlap_end'].minute) -
+                    (r['overlap_start'].hour * 60 + r['overlap_start'].minute)
+                )
+                for r in rows
+            )
+            return min(total_minutes / 600.0, 1.0)
+        finally:
+            cursor.close()
+            return_connection(conn)
+
+    def _passes_trust_threshold(self, user_a_trust: float, candidate_trust: float) -> bool:
+        if user_a_trust < 0.4:
+            min_threshold = 0.4
+        elif user_a_trust < 0.6:
+            min_threshold = 0.5
+        else:
+            min_threshold = 0.3
+        return candidate_trust >= min_threshold
+
     def _generate_explanation(
         self,
         candidate: Dict,
@@ -412,45 +550,20 @@ class MatchingService:
         similarity: float,
         mutual_skill: Optional[str]
     ) -> str:
-        """
-        Generate human-readable explanation of why users matched
-        
-        Examples:
-        - "Bob teaches python programming (95% match to your search 'python'). 
-           You teach graphic design which Bob wants. Trust: 0.78"
-        - "Carol teaches spanish (87% match). Trust: 0.75. 
-           Note: Carol doesn't want skills you offer"
-        """
-        name = candidate['name']
+        name  = candidate['name']
         trust = candidate['trust_score']
-        
-        # Part 1: Skill match explanation
-        similarity_pct = int(similarity * 100)
-        skill_part = f"{name} teaches {matched_skill} ({similarity_pct}% match to '{desired_skill}')"
-        
-        # Part 2: Mutual interest explanation
-        if mutual_skill:
-            mutual_part = f"You teach {mutual_skill} which {name} wants"
-        else:
-            mutual_part = f"{name} doesn't want skills you currently offer"
-        
-        # Part 3: Trust info
-        trust_part = f"Trust: {trust:.2f}"
-        
-        # Combine
-        explanation = f"{skill_part}. {mutual_part}. {trust_part}."
-        
-        return explanation
-    
+        pct   = int(similarity * 100)
+        skill_part  = f"{name} teaches {matched_skill} ({pct}% match to '{desired_skill}')"
+        mutual_part = (
+            f"You teach {mutual_skill} which {name} wants"
+            if mutual_skill else
+            f"{name} doesn't want skills you currently offer"
+        )
+        return f"{skill_part}. {mutual_part}. Trust: {trust:.2f}."
+
     def _get_user_skills(self, user_id: int, skill_type: str) -> List[str]:
-        """
-        Get list of skill names for a user
-        
-        NEW: Joins through skill_graph to get canonical names
-        """
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
         try:
             cursor.execute(
                 """
@@ -462,51 +575,43 @@ class MatchingService:
                 """,
                 (user_id, skill_type)
             )
-            
-            results = cursor.fetchall()
-            return [r['skill_name'] for r in results]
-            
+            return [r['skill_name'] for r in cursor.fetchall()]
         finally:
             cursor.close()
             return_connection(conn)
-    
-    def _parse_pgvector(self, vector_str: str) -> List[float]:
-        """
-        Parse PostgreSQL vector string to Python list of floats
-        
-        PostgreSQL returns vectors as strings like: "[0.123,-0.456,0.789,...]"
-        
-        Args:
-            vector_str: String representation of vector from PostgreSQL
-            
-        Returns:
-            List of floats
-        """
-        # Remove brackets and split by comma
-        vector_str = vector_str.strip()
-        if vector_str.startswith('[') and vector_str.endswith(']'):
-            vector_str = vector_str[1:-1]
-        
-        # Convert to list of floats
-        return [float(x.strip()) for x in vector_str.split(',')]
-    
-    def get_match_statistics(self, user_id: int) -> Dict:
-        """
-        Get statistics about user's matching potential
-        
-        NEW: Updated to query skill_graph + user_skills
-        """
+
+    def _get_skill_category(self, skill_name: str) -> Optional[str]:
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
         try:
-            # Count skills offered and wanted
+            cursor.execute(
+                "SELECT skill_category FROM skill_graph WHERE skill_name ILIKE %s LIMIT 1",
+                (f"%{skill_name}%",)
+            )
+            result = cursor.fetchone()
+            return result['skill_category'] if result else None
+        finally:
+            cursor.close()
+            return_connection(conn)
+
+    def _parse_pgvector(self, vector_str: str) -> List[float]:
+        vector_str = vector_str.strip().lstrip('[').rstrip(']')
+        return [float(x.strip()) for x in vector_str.split(',')]
+
+    # ------------------------------------------------------------------ #
+    # Statistics                                                          #
+    # ------------------------------------------------------------------ #
+
+    def get_match_statistics(self, user_id: int) -> Dict:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        try:
             cursor.execute(
                 """
-                SELECT 
-                    COUNT(CASE WHEN us.skill_type = 'offer' THEN 1 END) as skills_offered,
-                    COUNT(CASE WHEN us.skill_type = 'want' THEN 1 END) as skills_wanted,
-                    COUNT(CASE WHEN sg.skill_embedding IS NOT NULL THEN 1 END) as skills_with_embeddings
+                SELECT
+                    COUNT(CASE WHEN us.skill_type = 'offer' THEN 1 END) AS skills_offered,
+                    COUNT(CASE WHEN us.skill_type = 'want'  THEN 1 END) AS skills_wanted,
+                    COUNT(CASE WHEN sg.skill_embedding IS NOT NULL THEN 1 END) AS skills_with_embeddings
                 FROM user_skills us
                 JOIN skill_graph sg ON us.skill_graph_id = sg.id
                 WHERE us.user_id = %s
@@ -514,11 +619,10 @@ class MatchingService:
                 (user_id,)
             )
             skill_stats = cursor.fetchone()
-            
-            # Count potential matches for each wanted skill
+
             cursor.execute(
                 """
-                SELECT COUNT(DISTINCT us2.user_id) as potential_partners
+                SELECT COUNT(DISTINCT us2.user_id) AS potential_partners
                 FROM user_skills us1
                 JOIN skill_graph sg1 ON us1.skill_graph_id = sg1.id
                 JOIN user_skills us2 ON us2.skill_type = 'offer'
@@ -532,159 +636,24 @@ class MatchingService:
                 (user_id, user_id)
             )
             match_stats = cursor.fetchone()
-            
+
             return {
                 'user_id': user_id,
                 'skills_offered': skill_stats['skills_offered'],
                 'skills_wanted': skill_stats['skills_wanted'],
                 'skills_with_embeddings': skill_stats['skills_with_embeddings'],
-                'potential_partners': match_stats['potential_partners']
+                'potential_partners': match_stats['potential_partners'],
             }
-            
         finally:
             cursor.close()
             return_connection(conn)
 
-    def _passes_trust_threshold(self, user_a_trust, candidate_trust):
-        if user_a_trust < 0.4:
-            min_threshold = 0.4
-        elif user_a_trust < 0.6:
-            min_threshold = 0.5
-        else:
-            min_threshold = 0.3
 
-        return candidate_trust >= min_threshold
-
-    def _calculate_schedule_overlap(self, user_a_id: int, user_b_id: int) -> float:
-        """
-        Returns overlap score between 0.0 and 1.0
-        """
-
-        conn = get_connection()
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-
-        try:
-            cursor.execute("""
-                SELECT a.day_of_week,
-                    GREATEST(a.start_time, b.start_time) AS overlap_start,
-                    LEAST(a.end_time, b.end_time) AS overlap_end
-                FROM availability a
-                JOIN availability b
-                ON a.day_of_week = b.day_of_week
-                AND a.start_time < b.end_time
-                AND a.end_time > b.start_time
-                WHERE a.user_id = %s AND b.user_id = %s
-            """, (user_a_id, user_b_id))
-
-            rows = cursor.fetchall()
-
-            if not rows:
-                return 0.0
-
-            total_overlap_minutes = 0
-
-            for r in rows:
-                start = r['overlap_start']
-                end = r['overlap_end']
-
-                start_min = start.hour * 60 + start.minute
-                end_min = end.hour * 60 + end.minute
-
-                total_overlap_minutes += max(0, end_min - start_min)
-
-            # Normalize: 10 hours/week = 1.0
-            return min(total_overlap_minutes / 600.0, 1.0)
-
-        finally:
-            cursor.close()
-            return_connection(conn)
-
-    def _get_skill_category(self, skill_name: str) -> Optional[str]:
-        conn = get_connection()
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-
-        try:
-            cursor.execute("""
-                SELECT skill_category
-                FROM skill_graph
-                WHERE skill_name ILIKE %s
-                LIMIT 1
-            """, (f"%{skill_name}%",))
-
-            result = cursor.fetchone()
-            return result['skill_category'] if result else None
-
-        finally:
-            cursor.close()
-            return_connection(conn)
-
-    def _create_match_record(self, requester_id: int, partner_id: int):
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        try:
-            cursor.execute("""
-                UPDATE matches
-                SET status = 'accepted'
-                WHERE user_a_id = %s AND user_b_id = %s
-                RETURNING id
-            """, (requester_id, partner_id))
-
-            match_id = cursor.fetchone()[0]
-            conn.commit()
-
-            return match_id
-
-        finally:
-            cursor.close()
-            return_connection(conn)
-
-    def reject_match_record(self, requester_id: int, partner_id: int):
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        try:
-            cursor.execute("""
-                UPDATE matches
-                SET status = 'rejected'
-                WHERE user_a_id = %s AND user_b_id = %s
-                RETURNING id
-            """, (requester_id, partner_id))
-            match_id = cursor.fetchone()[0]
-            conn.commit()
-
-            return match_id
-
-        finally:
-            cursor.close()
-            return_connection(conn)
-
-    def _store_matches(self, requester_id: int, matches: List[Dict]):
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        try:
-            for match in matches:
-                cursor.execute("""
-                    INSERT INTO matches (user_a_id, user_b_id, status)
-                    VALUES (%s, %s, 'pending')
-                    ON CONFLICT DO NOTHING
-                """, (requester_id, match['user_id']))
-
-            conn.commit()
-
-        finally:
-            cursor.close()
-            return_connection(conn)
-# Singleton instance
+# Singleton
 _matching_service = None
 
 def get_matching_service() -> MatchingService:
-    """
-    Get the global matching service instance
-    """
     global _matching_service
     if _matching_service is None:
         _matching_service = MatchingService()
     return _matching_service
-
