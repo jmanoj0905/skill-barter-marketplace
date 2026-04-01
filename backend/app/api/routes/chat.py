@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime,timezone
 from psycopg2.extras import RealDictCursor
 
 from backend.app.core.database import get_connection, return_connection
@@ -54,7 +54,7 @@ async def send_message(
             VALUES (%s, %s, %s, %s)
             RETURNING id, barter_id, sender_id, content, sent_at
             """,
-            (request.barter_id, current_user_id, request.content, datetime.utcnow())
+            (request.barter_id, current_user_id, request.content, datetime.now(timezone.utc))
         )
 
         message = cursor.fetchone()

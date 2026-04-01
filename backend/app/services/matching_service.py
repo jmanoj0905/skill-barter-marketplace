@@ -15,7 +15,7 @@ from backend.app.core.database import get_connection, return_connection
 from psycopg2.extras import RealDictCursor
 import numpy as np
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,timezone
 
 
 logger = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ class MatchingService:
             )
             last_match = cursor.fetchone()
             if last_match and last_match.get('proposed_at'):
-                time_diff = datetime.utcnow() - last_match['proposed_at']
+                time_diff = datetime.now(timezone.utc) - last_match['proposed_at']
                 if time_diff < timedelta(hours=24):
                     raise ValueError("Please wait 24 hours between match requests")
 
@@ -336,7 +336,7 @@ class MatchingService:
         conn = get_connection()
         cursor = conn.cursor()
         try:
-            expires = datetime.utcnow() + timedelta(days=7)
+            expires = datetime.now(timezone.utc) + timedelta(days=7)
             for match in matches:
                 cursor.execute(
                     """
@@ -364,7 +364,7 @@ class MatchingService:
                         match['match_score'],
                         match.get('_desired_skill'),   # what requester wants to learn
                         match.get('_their_skill'),     # what candidate teaches
-                        datetime.utcnow(),
+                        datetime.now(timezone.utc),
                         expires,
                     )
                 )
@@ -399,7 +399,7 @@ class MatchingService:
                 WHERE user_a_id = %s AND user_b_id = %s
                 RETURNING id
                 """,
-                (datetime.utcnow(), requester_id, partner_id)
+                (datetime.now(timezone.utc), requester_id, partner_id)
             )
             row = cursor.fetchone()
 
@@ -413,7 +413,7 @@ class MatchingService:
                     DO UPDATE SET status = 'accepted', accepted_at = EXCLUDED.accepted_at
                     RETURNING id
                     """,
-                    (requester_id, partner_id, datetime.utcnow(), datetime.utcnow())
+                    (requester_id, partner_id, datetime.now(timezone.utc), datetime.now(timezone.utc))
                 )
                 row = cursor.fetchone()
 

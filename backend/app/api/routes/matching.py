@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from backend.app.services.matching_service import get_matching_service
 from backend.app.core.database import get_connection, return_connection, execute_query
 from psycopg2.extras import RealDictCursor
-from datetime import datetime
+from datetime import datetime,timezone
 
 router = APIRouter(prefix="/matching", tags=["matching"])
 
@@ -177,7 +177,7 @@ async def accept_match(
             RETURNING id, user_a_id, user_b_id, skill_a, skill_b, status, proposed_at
             """,
             (current_user_id, request.match_user_id, request.your_skill, 
-             request.their_skill, datetime.utcnow())
+             request.their_skill, datetime.now(timezone.utc))
         )
         
         barter = cursor.fetchone()
