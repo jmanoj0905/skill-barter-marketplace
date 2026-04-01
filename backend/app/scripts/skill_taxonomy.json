@@ -1,0 +1,486 @@
+{
+  "Programming Fundamentals": {
+    "level": 0,
+    "parent": null,
+    "description": "Core concepts that underpin all software development",
+    "children": {
+      "Data Structures": {
+        "level": 1,
+        "description": "Arrays, linked lists, trees, graphs, hash maps",
+        "children": {
+          "Arrays and Strings": {"level": 2, "description": "Linear data structures"},
+          "Linked Lists": {"level": 2, "description": "Pointer-based dynamic structures"},
+          "Trees and Graphs": {"level": 2, "description": "Hierarchical and network structures"},
+          "Hash Maps": {"level": 2, "description": "Key-value associative structures"}
+        }
+      },
+      "Algorithms": {
+        "level": 1,
+        "description": "Sorting, searching, dynamic programming",
+        "children": {
+          "Sorting Algorithms": {"level": 2, "description": "Merge sort, quicksort, heapsort"},
+          "Dynamic Programming": {"level": 2, "description": "Optimal substructure and memoization"},
+          "Graph Algorithms": {"level": 2, "description": "BFS, DFS, Dijkstra, A*"}
+        }
+      },
+      "Object Oriented Programming": {
+        "level": 1,
+        "description": "Classes, inheritance, polymorphism, encapsulation",
+        "children": {
+          "Design Patterns": {"level": 2, "description": "Factory, Singleton, Observer, MVC patterns"},
+          "SOLID Principles": {"level": 2, "description": "Software design guidelines"}
+        }
+      },
+      "Version Control": {
+        "level": 1,
+        "description": "Tracking and managing code changes",
+        "children": {
+          "Git": {"level": 2, "description": "Distributed version control"},
+          "GitHub": {"level": 2, "description": "Code collaboration platform"},
+          "GitLab": {"level": 2, "description": "DevOps platform with CI/CD"}
+        }
+      }
+    }
+  },
+
+  "Programming Languages": {
+    "level": 0,
+    "parent": null,
+    "description": "Specific languages used in software development",
+    "children": {
+      "Python": {
+        "level": 1,
+        "description": "General purpose high-level language",
+        "children": {
+          "Django": {"level": 2, "description": "Full-stack Python web framework"},
+          "Flask": {"level": 2, "description": "Lightweight Python web framework"},
+          "FastAPI": {"level": 2, "description": "Modern async Python API framework"},
+          "Pandas": {"level": 2, "description": "Data analysis and manipulation library"},
+          "NumPy": {"level": 2, "description": "Scientific computing with Python"}
+        }
+      },
+      "JavaScript": {
+        "level": 1,
+        "description": "Language of the web, front and back end",
+        "children": {
+          "React": {"level": 2, "description": "UI component library by Facebook"},
+          "Vue.js": {"level": 2, "description": "Progressive JavaScript framework"},
+          "Angular": {"level": 2, "description": "Full-featured frontend framework by Google"},
+          "Node.js": {"level": 2, "description": "Server-side JavaScript runtime"},
+          "TypeScript": {"level": 2, "description": "Typed superset of JavaScript"}
+        }
+      },
+      "Java": {
+        "level": 1,
+        "description": "Object-oriented, platform-independent language",
+        "children": {
+          "Spring Boot": {"level": 2, "description": "Java microservices and REST API framework"},
+          "Hibernate": {"level": 2, "description": "ORM framework for Java"},
+          "Maven": {"level": 2, "description": "Java build and dependency management"}
+        }
+      },
+      "C++": {
+        "level": 1,
+        "description": "Systems and performance-critical programming",
+        "children": {
+          "STL": {"level": 2, "description": "Standard Template Library"},
+          "OpenGL": {"level": 2, "description": "Graphics rendering API"}
+        }
+      },
+      "Go": {
+        "level": 1,
+        "description": "Concurrent systems programming language by Google",
+        "children": {
+          "Gin": {"level": 2, "description": "High-performance Go web framework"},
+          "gRPC": {"level": 2, "description": "Remote procedure call framework"}
+        }
+      },
+      "Rust": {
+        "level": 1,
+        "description": "Memory-safe systems programming language",
+        "children": {
+          "Actix": {"level": 2, "description": "Powerful Rust web framework"},
+          "Tokio": {"level": 2, "description": "Async runtime for Rust"}
+        }
+      },
+      "SQL": {
+        "level": 1,
+        "description": "Structured Query Language for databases",
+        "children": {
+          "PostgreSQL": {"level": 2, "description": "Advanced open-source relational database"},
+          "MySQL": {"level": 2, "description": "Popular open-source relational database"},
+          "SQLite": {"level": 2, "description": "Lightweight embedded database"}
+        }
+      }
+    }
+  },
+
+  "Web Development": {
+    "level": 0,
+    "parent": null,
+    "description": "Building applications for the web",
+    "children": {
+      "Frontend Development": {
+        "level": 1,
+        "description": "User interface and client-side development",
+        "children": {
+          "HTML": {"level": 2, "description": "Structure of web pages"},
+          "CSS": {"level": 2, "description": "Styling and layout"},
+          "Tailwind CSS": {"level": 2, "description": "Utility-first CSS framework"},
+          "Bootstrap": {"level": 2, "description": "Responsive CSS component library"},
+          "Webpack": {"level": 2, "description": "JavaScript module bundler"}
+        }
+      },
+      "Backend Development": {
+        "level": 1,
+        "description": "Server-side logic and API development",
+        "children": {
+          "REST API Design": {"level": 2, "description": "Representational state transfer architecture"},
+          "GraphQL": {"level": 2, "description": "Query language for APIs"},
+          "WebSockets": {"level": 2, "description": "Real-time bidirectional communication"},
+          "Authentication": {"level": 2, "description": "JWT, OAuth2, session management"},
+          "Caching": {"level": 2, "description": "Redis, Memcached for performance"}
+        }
+      },
+      "Full Stack Development": {
+        "level": 1,
+        "description": "End-to-end web application development",
+        "children": {
+          "Next.js": {"level": 2, "description": "Full-stack React framework"},
+          "Nuxt.js": {"level": 2, "description": "Full-stack Vue framework"}
+        }
+      }
+    }
+  },
+
+  "Data Science": {
+    "level": 0,
+    "parent": null,
+    "description": "Extracting insights and knowledge from data",
+    "children": {
+      "Statistics": {
+        "level": 1,
+        "description": "Mathematical foundation for data analysis",
+        "children": {
+          "Probability Theory": {"level": 2, "description": "Foundation of statistical inference"},
+          "Hypothesis Testing": {"level": 2, "description": "Statistical significance testing"},
+          "Bayesian Statistics": {"level": 2, "description": "Probabilistic reasoning and inference"},
+          "Regression Analysis": {"level": 2, "description": "Modeling relationships between variables"}
+        }
+      },
+      "Data Analysis": {
+        "level": 1,
+        "description": "Exploring and summarizing datasets",
+        "children": {
+          "Exploratory Data Analysis": {"level": 2, "description": "Initial data investigation"},
+          "Data Visualization": {"level": 2, "description": "Matplotlib, Seaborn, Plotly charts"},
+          "Data Wrangling": {"level": 2, "description": "Cleaning and transforming raw data"},
+          "Feature Engineering": {"level": 2, "description": "Creating meaningful model inputs"}
+        }
+      },
+      "Machine Learning": {
+        "level": 1,
+        "description": "Algorithms that learn from data",
+        "children": {
+          "Supervised Learning": {"level": 2, "description": "Classification and regression models"},
+          "Unsupervised Learning": {"level": 2, "description": "Clustering and dimensionality reduction"},
+          "Reinforcement Learning": {"level": 2, "description": "Learning through rewards and penalties"},
+          "Model Evaluation": {"level": 2, "description": "Cross-validation, metrics, tuning"}
+        }
+      },
+      "Deep Learning": {
+        "level": 1,
+        "description": "Neural networks for complex pattern recognition",
+        "children": {
+          "Neural Networks": {"level": 2, "description": "Feedforward, backpropagation"},
+          "Convolutional Neural Networks": {"level": 2, "description": "Image recognition architectures"},
+          "Recurrent Neural Networks": {"level": 2, "description": "Sequential data modeling"},
+          "Transformers": {"level": 2, "description": "Attention-based architecture (BERT, GPT)"}
+        }
+      },
+      "Natural Language Processing": {
+        "level": 1,
+        "description": "Processing and understanding human language",
+        "children": {
+          "Text Preprocessing": {"level": 2, "description": "Tokenization, stemming, lemmatization"},
+          "Sentiment Analysis": {"level": 2, "description": "Opinion mining from text"},
+          "Named Entity Recognition": {"level": 2, "description": "Identifying entities in text"},
+          "Large Language Models": {"level": 2, "description": "GPT, BERT, LLaMA fine-tuning"}
+        }
+      },
+      "Data Engineering": {
+        "level": 1,
+        "description": "Building pipelines and infrastructure for data",
+        "children": {
+          "ETL Pipelines": {"level": 2, "description": "Extract, Transform, Load workflows"},
+          "Apache Spark": {"level": 2, "description": "Large-scale data processing"},
+          "Apache Kafka": {"level": 2, "description": "Real-time data streaming"},
+          "Data Warehousing": {"level": 2, "description": "BigQuery, Snowflake, Redshift"},
+          "Data Lakes": {"level": 2, "description": "Storing raw unstructured data at scale"}
+        }
+      }
+    }
+  },
+
+  "Cloud Computing": {
+    "level": 0,
+    "parent": null,
+    "description": "Deploying and managing applications in the cloud",
+    "children": {
+      "AWS": {
+        "level": 1,
+        "description": "Amazon Web Services cloud platform",
+        "children": {
+          "EC2": {"level": 2, "description": "Virtual server instances"},
+          "S3": {"level": 2, "description": "Object storage service"},
+          "Lambda": {"level": 2, "description": "Serverless function execution"},
+          "RDS": {"level": 2, "description": "Managed relational database service"},
+          "EKS": {"level": 2, "description": "Managed Kubernetes on AWS"}
+        }
+      },
+      "GCP": {
+        "level": 1,
+        "description": "Google Cloud Platform",
+        "children": {
+          "BigQuery": {"level": 2, "description": "Serverless data warehouse"},
+          "Cloud Run": {"level": 2, "description": "Serverless container execution"},
+          "Vertex AI": {"level": 2, "description": "Managed ML platform on GCP"}
+        }
+      },
+      "Azure": {
+        "level": 1,
+        "description": "Microsoft Azure cloud platform",
+        "children": {
+          "Azure Functions": {"level": 2, "description": "Serverless compute on Azure"},
+          "Azure DevOps": {"level": 2, "description": "CI/CD and project management"},
+          "Azure ML": {"level": 2, "description": "Machine learning on Azure"}
+        }
+      },
+      "Containerization": {
+        "level": 1,
+        "description": "Packaging applications with their dependencies",
+        "children": {
+          "Docker": {"level": 2, "description": "Container creation and management"},
+          "Kubernetes": {"level": 2, "description": "Container orchestration at scale"},
+          "Helm": {"level": 2, "description": "Kubernetes package manager"}
+        }
+      },
+      "Infrastructure as Code": {
+        "level": 1,
+        "description": "Managing infrastructure through code",
+        "children": {
+          "Terraform": {"level": 2, "description": "Cloud-agnostic IaC tool"},
+          "Ansible": {"level": 2, "description": "Configuration management and automation"},
+          "CloudFormation": {"level": 2, "description": "AWS native IaC service"}
+        }
+      }
+    }
+  },
+
+  "DevOps": {
+    "level": 0,
+    "parent": null,
+    "description": "Practices combining development and operations",
+    "children": {
+      "CI/CD": {
+        "level": 1,
+        "description": "Continuous integration and deployment",
+        "children": {
+          "GitHub Actions": {"level": 2, "description": "CI/CD built into GitHub"},
+          "Jenkins": {"level": 2, "description": "Open-source automation server"},
+          "CircleCI": {"level": 2, "description": "Cloud-native CI/CD platform"},
+          "ArgoCD": {"level": 2, "description": "GitOps continuous delivery for Kubernetes"}
+        }
+      },
+      "Monitoring and Observability": {
+        "level": 1,
+        "description": "Tracking system health and performance",
+        "children": {
+          "Prometheus": {"level": 2, "description": "Metrics collection and alerting"},
+          "Grafana": {"level": 2, "description": "Visualization for metrics"},
+          "ELK Stack": {"level": 2, "description": "Elasticsearch, Logstash, Kibana logging"},
+          "Datadog": {"level": 2, "description": "Cloud monitoring platform"}
+        }
+      },
+      "Site Reliability Engineering": {
+        "level": 1,
+        "description": "Ensuring reliability and scalability of services",
+        "children": {
+          "SLOs and SLAs": {"level": 2, "description": "Service level objectives and agreements"},
+          "Chaos Engineering": {"level": 2, "description": "Testing resilience through failure injection"},
+          "Load Balancing": {"level": 2, "description": "Distributing traffic across servers"}
+        }
+      }
+    }
+  },
+
+  "Databases": {
+    "level": 0,
+    "parent": null,
+    "description": "Storing, retrieving and managing structured data",
+    "children": {
+      "Relational Databases": {
+        "level": 1,
+        "description": "Table-based structured data storage",
+        "children": {
+          "Database Design": {"level": 2, "description": "Schema normalization, ER diagrams"},
+          "Query Optimization": {"level": 2, "description": "Indexes, execution plans, tuning"},
+          "Transactions and ACID": {"level": 2, "description": "Atomicity, consistency, isolation, durability"}
+        }
+      },
+      "NoSQL Databases": {
+        "level": 1,
+        "description": "Non-relational flexible data storage",
+        "children": {
+          "MongoDB": {"level": 2, "description": "Document-based NoSQL database"},
+          "Redis": {"level": 2, "description": "In-memory key-value store"},
+          "Cassandra": {"level": 2, "description": "Distributed wide-column database"},
+          "Neo4j": {"level": 2, "description": "Graph database for connected data"}
+        }
+      },
+      "Vector Databases": {
+        "level": 1,
+        "description": "Storing and searching high-dimensional embeddings",
+        "children": {
+          "Pinecone": {"level": 2, "description": "Managed vector database for AI"},
+          "Milvus": {"level": 2, "description": "Open-source vector database"},
+          "pgvector": {"level": 2, "description": "Vector similarity search in PostgreSQL"}
+        }
+      }
+    }
+  },
+
+  "Cybersecurity": {
+    "level": 0,
+    "parent": null,
+    "description": "Protecting systems and data from attacks",
+    "children": {
+      "Network Security": {
+        "level": 1,
+        "description": "Securing communications and network infrastructure",
+        "children": {
+          "Firewalls and IDS": {"level": 2, "description": "Intrusion detection and prevention"},
+          "VPN and TLS": {"level": 2, "description": "Encrypted communication protocols"},
+          "Network Forensics": {"level": 2, "description": "Analyzing network incidents"}
+        }
+      },
+      "Application Security": {
+        "level": 1,
+        "description": "Securing software applications",
+        "children": {
+          "OWASP Top 10": {"level": 2, "description": "Common web vulnerabilities"},
+          "Penetration Testing": {"level": 2, "description": "Ethical hacking to find vulnerabilities"},
+          "Secure Code Review": {"level": 2, "description": "Auditing code for security flaws"},
+          "OAuth and JWT Security": {"level": 2, "description": "Securing authentication flows"}
+        }
+      },
+      "Cryptography": {
+        "level": 1,
+        "description": "Securing data through mathematical algorithms",
+        "children": {
+          "Symmetric Encryption": {"level": 2, "description": "AES, DES algorithms"},
+          "Asymmetric Encryption": {"level": 2, "description": "RSA, ECC, public-key cryptography"},
+          "Hashing Algorithms": {"level": 2, "description": "SHA-256, bcrypt, MD5"}
+        }
+      }
+    }
+  },
+
+  "Mobile Development": {
+    "level": 0,
+    "parent": null,
+    "description": "Building applications for mobile devices",
+    "children": {
+      "Android Development": {
+        "level": 1,
+        "description": "Native Android app development",
+        "children": {
+          "Kotlin": {"level": 2, "description": "Modern language for Android"},
+          "Jetpack Compose": {"level": 2, "description": "Declarative UI toolkit for Android"},
+          "Android SDK": {"level": 2, "description": "Core Android development kit"}
+        }
+      },
+      "iOS Development": {
+        "level": 1,
+        "description": "Native Apple platform development",
+        "children": {
+          "Swift": {"level": 2, "description": "Modern Apple programming language"},
+          "SwiftUI": {"level": 2, "description": "Declarative UI for iOS/macOS"},
+          "Xcode": {"level": 2, "description": "Apple IDE for iOS development"}
+        }
+      },
+      "Cross-Platform Development": {
+        "level": 1,
+        "description": "Write once, run on multiple platforms",
+        "children": {
+          "React Native": {"level": 2, "description": "Mobile apps using React"},
+          "Flutter": {"level": 2, "description": "Google UI toolkit for mobile/web/desktop"},
+          "Ionic": {"level": 2, "description": "Hybrid app framework"}
+        }
+      }
+    }
+  },
+
+  "Software Engineering": {
+    "level": 0,
+    "parent": null,
+    "description": "Principles and practices of building reliable software",
+    "children": {
+      "System Design": {
+        "level": 1,
+        "description": "Designing scalable, reliable software architectures",
+        "children": {
+          "Microservices Architecture": {"level": 2, "description": "Decomposing apps into small services"},
+          "Event-Driven Architecture": {"level": 2, "description": "Async communication via events"},
+          "API Gateway Pattern": {"level": 2, "description": "Single entry point for microservices"},
+          "CAP Theorem": {"level": 2, "description": "Consistency, availability, partition tolerance"}
+        }
+      },
+      "Testing": {
+        "level": 1,
+        "description": "Verifying software correctness",
+        "children": {
+          "Unit Testing": {"level": 2, "description": "Testing individual components"},
+          "Integration Testing": {"level": 2, "description": "Testing component interactions"},
+          "Test-Driven Development": {"level": 2, "description": "Writing tests before code"},
+          "End-to-End Testing": {"level": 2, "description": "Testing full user workflows"}
+        }
+      },
+      "Agile and Scrum": {
+        "level": 1,
+        "description": "Iterative software development methodologies",
+        "children": {
+          "Scrum Framework": {"level": 2, "description": "Sprints, standups, retrospectives"},
+          "Kanban": {"level": 2, "description": "Visual workflow management"},
+          "Jira": {"level": 2, "description": "Agile project management tool"}
+        }
+      }
+    }
+  },
+
+  "Blockchain": {
+    "level": 0,
+    "parent": null,
+    "description": "Decentralized ledger and smart contract technologies",
+    "children": {
+      "Smart Contracts": {
+        "level": 1,
+        "description": "Self-executing code on blockchain",
+        "children": {
+          "Solidity": {"level": 2, "description": "Language for Ethereum smart contracts"},
+          "Hardhat": {"level": 2, "description": "Ethereum development environment"},
+          "OpenZeppelin": {"level": 2, "description": "Secure smart contract library"}
+        }
+      },
+      "Web3 Development": {
+        "level": 1,
+        "description": "Decentralized application development",
+        "children": {
+          "Ethereum": {"level": 2, "description": "Leading smart contract blockchain"},
+          "IPFS": {"level": 2, "description": "Decentralized file storage"},
+          "MetaMask Integration": {"level": 2, "description": "Web3 wallet connection"}
+        }
+      }
+    }
+  }
+}

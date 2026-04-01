@@ -11,7 +11,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from backend.app.services.skill_normalization_service import get_skill_normalization_service
-from backend.app.services.learning_path_service import get_learning_path_service   # FEAT-2.4.2
+from backend.app.services.learning_path_engine import get_learning_path_service   # FEAT-2.4.2
 from backend.app.api.routes.matching import get_current_user_id
 
 router = APIRouter(prefix="/skills", tags=["skills"])
@@ -268,7 +268,7 @@ async def get_learning_path(
     """
     try:
         lp_service = get_learning_path_service()
-        path = lp_service.get_learning_path(skill_name=skill, user_level=level)
+        path = lp_service.get_learning_path(skill=skill, user_level=level)
         return LearningPathResponse(**path)
     except Exception as e:
         raise HTTPException(
