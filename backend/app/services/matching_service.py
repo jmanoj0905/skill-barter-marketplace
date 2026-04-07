@@ -184,6 +184,7 @@ class MatchingService:
 
         # Strip internal-only keys before returning
         for m in top_matches:
+            m['match_id'] = m.pop('_match_id', None)
             m.pop('_desired_skill', None)
             m.pop('_their_skill', None)
 
@@ -345,7 +346,7 @@ class MatchingService:
                         match_score, skill_a_teaches, skill_b_teaches,
                         proposed_at, expires_at
                     )
-                    VALUES (%s, %s, 'pending', %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, 'proposed', %s, %s, %s, %s, %s)
                     ON CONFLICT (user_a_id, user_b_id)
                     DO UPDATE SET
                         match_score      = EXCLUDED.match_score,
@@ -355,8 +356,9 @@ class MatchingService:
                         expires_at       = EXCLUDED.expires_at,
                         status           = CASE
                             WHEN matches.status IN ('rejected', 'accepted') THEN matches.status
-                            ELSE 'pending'
+                            ELSE 'proposed'
                         END
+                    RETURNING id
                     """,
                     (
                         requester_id,
@@ -368,6 +370,8 @@ class MatchingService:
                         expires,
                     )
                 )
+                row = cursor.fetchone()
+                match['_match_id'] = row[0] if row else None
             conn.commit()
         except Exception as e:
             conn.rollback()

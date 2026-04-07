@@ -28,6 +28,7 @@ class MatchingRequest(BaseModel):
 
 class MatchResponse(BaseModel):
     """Single match result"""
+    match_id: Optional[int] = None
     user_id: int
     name: str
     trust_score: float
