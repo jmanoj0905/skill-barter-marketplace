@@ -102,3 +102,4 @@ Thumbs.db
 
 # Local settings
 .claude/
+.gstack/
