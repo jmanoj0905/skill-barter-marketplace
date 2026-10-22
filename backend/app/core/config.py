@@ -32,6 +32,8 @@ class Settings:
     SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecretkey")
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
+    FRAUD_ENFORCEMENT_ENABLED: bool = os.getenv("FRAUD_ENFORCEMENT_ENABLED", "false").lower() == "true"
+    FRAUD_ADMIN_KEY: str = os.getenv("FRAUD_ADMIN_KEY", "")
 
     
     SMTP_SERVER = os.getenv("SMTP_SERVER")

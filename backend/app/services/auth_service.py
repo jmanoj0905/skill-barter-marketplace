@@ -1,3 +1,4 @@
+
 from sqlalchemy.orm import Session
 from datetime import datetime
 
@@ -12,7 +13,12 @@ from app.core.security import (
     create_reset_token,
     decode_token
 )
-
+from app.services.wallet_service import create_wallet_with_initial_credits
+from app.core.config import settings
+from app.services.fraud_account_service import (
+    evaluate_and_store_account_fraud,
+    record_device_fingerprint,
+)
 from app.core.otp_cache import (
     generate_otp,
     store_otp,
@@ -27,10 +33,33 @@ from app.services.email_service import (
 )
 
 
+def _enforce_fraud_policy_if_enabled(user: User, summary: dict, event_type: str) -> None:
+    if not settings.FRAUD_ENFORCEMENT_ENABLED:
+        return
+
+    action = summary.get("policy_action")
+
+    if action == "restrict":
+        raise Exception("Security hold: account activity temporarily restricted for review")
+
+    if event_type == "login" and action == "step_up_verification":
+        if not user.email_verified or not user.phone_verified:
+            raise Exception("Additional verification required. Please verify both email and phone")
+
+
 # -------------------------
 # User Registration
 # -------------------------
-def register_user(db: Session, email: str, password: str, name: str, phone: str | None):
+def register_user(
+    db: Session,
+    email: str,
+    password: str,
+    name: str,
+    phone: str | None,
+    device_fingerprint: str | None = None,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+):
 
     existing_user = db.query(User).filter(User.email == email).first()
     if existing_user:
@@ -53,6 +82,37 @@ def register_user(db: Session, email: str, password: str, name: str, phone: str 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    from app.services.wallet_service import create_wallet_with_initial_credits
+    create_wallet_with_initial_credits(db, new_user.id)
+
+    # Fraud scoring is additive; optional enforcement is controlled by config.
+    try:
+        record_device_fingerprint(db, new_user.id, device_fingerprint, user_agent)
+        summary = evaluate_and_store_account_fraud(
+            db,
+            user_id=new_user.id,
+            event_type="register",
+            fingerprint_hash=device_fingerprint,
+            ip_address=ip_address,
+        )
+        _enforce_fraud_policy_if_enabled(new_user, summary, "register")
+    except Exception as fraud_error:
+        if settings.FRAUD_ENFORCEMENT_ENABLED:
+            raise
+        print(f"Fraud scoring skipped on register for user {new_user.id}: {fraud_error}")
+
+
+#     new_wallet = Wallet(
+#     user_id=new_user.id,3
+
+
+
+#     available_balance=50,
+#     total_earned=50
+# )
+
+#     db.add(new_wallet)
+#     db.commit()
 
     return new_user
 
@@ -60,7 +120,14 @@ def register_user(db: Session, email: str, password: str, name: str, phone: str 
 # -------------------------
 # Login Authentication
 # -------------------------
-def authenticate_user(db: Session, email: str, password: str):
+def authenticate_user(
+    db: Session,
+    email: str,
+    password: str,
+    device_fingerprint: str | None = None,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+):
 
     user = db.query(User).filter(User.email == email).first()
 
@@ -72,6 +139,21 @@ def authenticate_user(db: Session, email: str, password: str):
 
     user.last_login_at = datetime.utcnow()
     db.commit()
+
+    try:
+        record_device_fingerprint(db, user.id, device_fingerprint, user_agent)
+        summary = evaluate_and_store_account_fraud(
+            db,
+            user_id=user.id,
+            event_type="login",
+            fingerprint_hash=device_fingerprint,
+            ip_address=ip_address,
+        )
+        _enforce_fraud_policy_if_enabled(user, summary, "login")
+    except Exception as fraud_error:
+        if settings.FRAUD_ENFORCEMENT_ENABLED:
+            raise
+        print(f"Fraud scoring skipped on login for user {user.id}: {fraud_error}")
 
     return user
 

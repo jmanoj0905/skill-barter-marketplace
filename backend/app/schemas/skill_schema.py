@@ -1,9 +1,7 @@
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel
 
 class SkillCreate(BaseModel):
-
     user_id: int
-    skill_name: str = Field(min_length=3, max_length=100)
+    skill_name: str
     skill_type: str
     proficiency_level: str

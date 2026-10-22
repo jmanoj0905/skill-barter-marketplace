@@ -107,21 +107,44 @@
 #     }
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.api import auth_routes
 from app.api import user_routes
-
-# Database imports
+from app.db import base_models
 from app.db.base import Base
 from app.db.session import engine
+from app.models import transaction, user, wallet
 
-# Import models so SQLAlchemy knows them
-from app.models import user, wallet, transaction
+app = FastAPI(title="Skill Barter Marketplace API")
 
-app = FastAPI()
+# Allow local frontend apps (Vite default ports) to call API endpoints.
+app.add_middleware(
+	CORSMiddleware,
+	allow_origins=[
+		"http://localhost:5173",
+		"http://127.0.0.1:5173",
+		"http://localhost:5174",
+		"http://127.0.0.1:5174",
+	],
+	allow_credentials=True,
+	allow_methods=["*"],
+	allow_headers=["*"],
+)
 
-# Create database tables
+# Create database tables.
 Base.metadata.create_all(bind=engine)
 
-# Register routes
+# Register routes.
 app.include_router(auth_routes.router)
 app.include_router(user_routes.router)
+
+
+@app.get("/")
+def root():
+	return {"message": "Skill Barter Marketplace API is running"}
+
+
+@app.get("/health")
+def health():
+	return {"status": "ok"}

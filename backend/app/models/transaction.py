@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from datetime import datetime
 from app.db.base import Base
 
 class Transaction(Base):
@@ -7,12 +7,11 @@ class Transaction(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"))
 
-    amount = Column(Integer, nullable=False)
+    amount = Column(Integer)
+    type = Column(String(20))  # earned / spent / returned / penalty
 
-    type = Column(String(50), nullable=False)
+    description = Column(String(255))
 
-    description = Column(String(255), nullable=True)
-
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime, default=datetime.utcnow)

@@ -1,13 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from sqlalchemy.orm import Session
 from app.schemas.auth_schema import RegisterRequest, LoginRequest
 from app.services.auth_service import register_user, authenticate_user
-from app.core.security import create_access_token
 from app.api.deps import get_db
 from app.core.security import create_access_token, create_refresh_token
-from fastapi import Header
 from app.core.token_blacklist import blacklist_token
-from fastapi import HTTPException
 from pydantic import BaseModel
 from app.services.auth_service import forgot_password, reset_password
 from app.services.auth_service import verify_email_otp
@@ -17,7 +14,15 @@ from app.services.auth_service import generate_phone_otp
 from app.services.auth_service import verify_phone_otp
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
-from pydantic import BaseModel
+
+
+def _extract_client_ip(request: Request) -> str | None:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    if request.client:
+        return request.client.host
+    return None
 
 class PhoneOTPRequest(BaseModel):
     phone: str
@@ -44,7 +49,12 @@ class VerifyPhoneOTPRequest(BaseModel):
     otp: str
 
 @router.post("/register")
-def register(request: RegisterRequest, db: Session = Depends(get_db)):
+def register(
+    request: RegisterRequest,
+    raw_request: Request,
+    x_device_fingerprint: str | None = Header(default=None, alias="X-Device-Fingerprint"),
+    db: Session = Depends(get_db),
+):
 
     try:
         user = register_user(
@@ -52,7 +62,10 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
             request.email,
             request.password,
             request.name,
-            request.phone
+            request.phone,
+            device_fingerprint=x_device_fingerprint,
+            ip_address=_extract_client_ip(raw_request),
+            user_agent=raw_request.headers.get("user-agent"),
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -61,9 +74,24 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-def login(request: LoginRequest, db: Session = Depends(get_db)):
+def login(
+    request: LoginRequest,
+    raw_request: Request,
+    x_device_fingerprint: str | None = Header(default=None, alias="X-Device-Fingerprint"),
+    db: Session = Depends(get_db),
+):
 
-    user = authenticate_user(db, request.email, request.password)
+    try:
+        user = authenticate_user(
+            db,
+            request.email,
+            request.password,
+            device_fingerprint=x_device_fingerprint,
+            ip_address=_extract_client_ip(raw_request),
+            user_agent=raw_request.headers.get("user-agent"),
+        )
+    except Exception as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")

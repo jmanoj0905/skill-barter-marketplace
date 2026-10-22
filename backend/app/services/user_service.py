@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.models.identity_score import IdentityConfidenceScore
+from app.models.skill import Skill
 from sqlalchemy.orm import Session
 from app.models.user import User
 
@@ -54,19 +55,40 @@ def get_user_profile(db: Session, user_id: int):
         .first()
     )
 
+    skills = db.query(Skill).filter(Skill.user_id == user_id).all()
+    offered = []
+    desired = []
+
+    for skill in skills:
+        entry = {
+            "id": skill.id,
+            "skill_name": skill.skill_name,
+            "proficiency_level": skill.proficiency_level,
+        }
+        if skill.skill_type == "offered":
+            offered.append(entry)
+        else:
+            desired.append(entry)
+
     return {
         "user_id": user.id,
+        "name": user.name,
         "email": user.email,
         "phone": user.phone,
+        "email_verified": user.email_verified,
+        "phone_verified": user.phone_verified,
+        "is_active": user.is_active,
         "bio": user.bio,
         "location": user.location,
         "timezone": user.timezone,
         "preferred_languages": user.preferred_languages,
         "trust_score": user.trust_score,
+        "created_at": user.created_at,
+        "last_login_at": user.last_login_at,
         "identity_confidence_score": identity_score.confidence_score if identity_score else user.trust_score,
         "session_count": 0,  # session tracking not implemented yet
-        "skills_offered": [],
-        "skills_desired": []
+        "skills_offered": offered,
+        "skills_desired": desired
     }
 
 
