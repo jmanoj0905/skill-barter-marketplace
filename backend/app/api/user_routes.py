@@ -64,7 +64,7 @@ def get_profile(user_id: int, db: Session = Depends(get_db)):
     return profile
 
 
-@router.post("/users/{user_id}/profile/image")
+@router.post("/{user_id}/profile/image")
 async def upload_profile_image(
         user_id: int,
         file: UploadFile = File(...),
@@ -85,7 +85,7 @@ async def upload_profile_image(
         "thumbnail_url": thumb_url
     }
 
-@router.get("/users/check-username")
+@router.get("/check-username")
 def check_username(
     username: str = Query(...),
     db: Session = Depends(get_db)
@@ -97,7 +97,7 @@ def check_username(
         "available": available
     }
 
-@router.post("/users/skills")
+@router.post("/skills")
 def add_skill(
     skill: SkillCreate,
     db: Session = Depends(get_db)
@@ -122,7 +122,7 @@ def add_skill(
     return created_skill
 
 
-@router.get("/users/skills")
+@router.get("/skills")
 def retrieve_skills(
     user_id: int,
     db: Session = Depends(get_db)
@@ -133,7 +133,7 @@ def retrieve_skills(
     return skills
 
 
-@router.put("/users/skills/{skillId}")
+@router.put("/skills/{skillId}")
 def update_user_skill(
     skillId: int,
     skill: SkillCreate,
@@ -157,7 +157,7 @@ def update_user_skill(
 
     return updated_skill
 
-@router.delete("/users/skills/{skillId}")
+@router.delete("/skills/{skillId}")
 def delete_user_skill(
     skillId: int,
     user_id: int,

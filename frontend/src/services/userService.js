@@ -9,14 +9,14 @@ export const updateProfile = (payload) => {
 };
 
 export const checkUsernameAvailability = (username) => {
-  return API.get(`/users/users/check-username?username=${encodeURIComponent(username)}`);
+  return API.get(`/users/check-username?username=${encodeURIComponent(username)}`);
 };
 
 export const uploadProfileImage = (userId, file) => {
   const form = new FormData();
   form.append("file", file);
 
-  return API.post(`/users/users/${userId}/profile/image`, form, {
+  return API.post(`/users/${userId}/profile/image`, form, {
     headers: {
       "Content-Type": "multipart/form-data"
     }

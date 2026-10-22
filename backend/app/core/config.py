@@ -29,6 +29,14 @@ load_dotenv()
 
 class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL")
+    SUPABASE_URL: str = os.getenv(
+        "SUPABASE_URL",
+        "https://mknpeldbhrzzpauqptky.supabase.co",
+    )
+    SUPABASE_KEY: str = os.getenv(
+        "SUPABASE_KEY",
+        "sb_publishable_MDutCIwnvnn6o69VRWMSJg_bMA-m_OL",
+    )
     SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecretkey")
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
@@ -46,5 +54,3 @@ class Settings:
     TWILIO_PHONE = os.getenv("TWILIO_PHONE")
 
 settings = Settings()
-
-
