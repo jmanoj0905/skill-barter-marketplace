@@ -10,6 +10,18 @@ def create_skill(db, user_id, skill_data):
     taxonomy = map_skill_to_taxonomy(normalized)
     embedding = generate_embedding(skill_data.skill_name)
 
+    duplicate = (
+        db.query(Skill)
+        .filter(
+            Skill.user_id == user_id,
+            Skill.normalized_name == normalized,
+            Skill.skill_type == skill_data.skill_type,
+        )
+        .first()
+    )
+    if duplicate:
+        raise ValueError("This skill already exists for the user")
+
     new_skill = Skill(
         user_id=user_id,
         skill_name=skill_data.skill_name,
@@ -32,6 +44,14 @@ def create_skill(db, user_id, skill_data):
     "skill": new_skill,
     "taxonomy": taxonomy
 }
+
+
+def get_skill_normalization_service():
+    return normalize_skill
+
+
+def add_user_skill(db, skill_data):
+    return create_skill(db, skill_data.user_id, skill_data)
  
 
 def get_user_skills(db, user_id):
@@ -51,7 +71,7 @@ def get_user_skills(db, user_id):
 
         if skill.skill_type == "offered":
             offered.append(skill_data)
-        else:
+        elif skill.skill_type == "desired":
             desired.append(skill_data)
 
     return {
@@ -133,6 +153,41 @@ def suggest_skills(db, query: str):
     unique = {s.skill_name: s for s in results}.values()
 
     return list(unique)[:5]
+
+
+def search_skills(db, query: str, limit: int = 20):
+    normalized_query = normalize_skill(query)
+    if not normalized_query:
+        return []
+
+    skills = (
+        db.query(Skill)
+        .filter(Skill.normalized_name.ilike(f"%{normalized_query}%"))
+        .order_by(Skill.skill_name)
+        .limit(limit)
+        .all()
+    )
+    return skills
+
+
+def generate_learning_path(skill_name: str):
+    normalized = normalize_skill(skill_name)
+    taxonomy = map_skill_to_taxonomy(normalized)
+    category = taxonomy[0]["category"] if taxonomy else None
+    canonical_name = taxonomy[0]["canonical_name"] if taxonomy else normalized
+
+    steps = [
+        f"Learn the fundamentals of {canonical_name}",
+        f"Practice {canonical_name} with a small guided project",
+        f"Build an independent project using {canonical_name}",
+        f"Share your work and request feedback on your {canonical_name} skills",
+    ]
+    return {
+        "skill_name": skill_name,
+        "normalized_name": normalized,
+        "category": category,
+        "steps": steps,
+    }
 
 
 embedding_cache = {}

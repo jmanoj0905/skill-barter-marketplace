@@ -110,6 +110,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import auth_routes
+from app.api import skill_routes
 from app.api import user_routes
 from app.db import base_models
 from app.db.base import Base
@@ -138,6 +139,8 @@ Base.metadata.create_all(bind=engine)
 # Register routes.
 app.include_router(auth_routes.router)
 app.include_router(user_routes.router)
+app.include_router(skill_routes.router)
+app.include_router(skill_routes.api_router)
 
 
 @app.get("/")

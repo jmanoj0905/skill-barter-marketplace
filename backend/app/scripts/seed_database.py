@@ -215,7 +215,7 @@ def add_skills(user_id, skills_offered, skills_wanted):
             cursor.execute(
                 """
                 INSERT INTO skills (user_id, skill_name, skill_type, proficiency_level)
-                VALUES (%s, %s, 'offer', %s)
+                VALUES (%s, %s, 'offered', %s)
                 RETURNING id
                 """,
                 (user_id, skill_name, proficiency)
@@ -227,7 +227,7 @@ def add_skills(user_id, skills_offered, skills_wanted):
             cursor.execute(
                 """
                 INSERT INTO skills (user_id, skill_name, skill_type, proficiency_level)
-                VALUES (%s, %s, 'want', %s)
+                VALUES (%s, %s, 'desired', %s)
                 RETURNING id
                 """,
                 (user_id, skill_name, proficiency)

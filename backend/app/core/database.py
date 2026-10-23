@@ -1,3 +1,4 @@
+
 """
 Database connection configuration
 Handles PostgreSQL connection pooling
@@ -6,19 +7,22 @@ Handles PostgreSQL connection pooling
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2 import pool
-import os
-from dotenv import load_dotenv
+from sqlalchemy.engine import make_url
 
-# Load environment variables
-load_dotenv()
+from app.core.config import settings
 
-# Database configuration from .env
+if not settings.DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not configured. Add it to backend/.env or the process environment."
+    )
+
+database_url = make_url(settings.DATABASE_URL)
 DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'port': os.getenv('DB_PORT', '5432'),
-    'database': os.getenv('DB_NAME', 'skill_barter'),
-    'user': os.getenv('DB_USER', 'skill_barter_app'),
-    'password': os.getenv('DB_PASSWORD', '')
+    "host": database_url.host,
+    "port": database_url.port or 5432,
+    "database": database_url.database,
+    "user": database_url.username,
+    "password": database_url.password,
 }
 
 # Connection pool (reuses connections for performance)

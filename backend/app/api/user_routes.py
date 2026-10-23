@@ -10,11 +10,6 @@ from app.services.image_service import generate_thumbnail
 from app.services.storage_service import upload_file
 from app.utils.file_validator import validate_image
 from app.services.user_service import is_username_available
-from app.schemas.skill_schema import SkillCreate
-from app.services.skill_service import create_skill
-from app.services.skill_service import get_user_skills
-from app.services.skill_service import update_skill
-from app.services.skill_service import delete_skill
 from fastapi import HTTPException
 from app.utils.logger import logger
 from app.models.wallet import Wallet
@@ -23,8 +18,6 @@ from app.models.identity_score import IdentityConfidenceScore
 from app.services.wallet_service import create_wallet_with_initial_credits
 import io
 from fastapi import APIRouter, Depends, Query
-from app.services.skill_service import suggest_skills
-from app.services.skill_service import get_embedding_by_skill_id
 
 router = APIRouter(prefix="/users", tags=["Users"])
 # router = APIRouter(prefix="/users", tags=["Users"])
@@ -97,96 +90,6 @@ def check_username(
         "available": available
     }
 
-@router.post("/skills")
-def add_skill(
-    skill: SkillCreate,
-    db: Session = Depends(get_db)
-):
-
-    created_skill = create_skill(db, skill.user_id, skill)
-
-    return created_skill
-    
-      # Validation
-    valid_types = ["offered", "desired"]
-    valid_levels = ["beginner", "intermediate", "advanced", "expert"]
-
-    if skill.skill_type not in valid_types:
-        return {"error": "Invalid skill type"}
-
-    if skill.proficiency_level not in valid_levels:
-        return {"error": "Invalid proficiency level"}
-
-    created_skill = create_skill(db, user_id, skill)
-
-    return created_skill
-
-
-@router.get("/skills")
-def retrieve_skills(
-    user_id: int,
-    db: Session = Depends(get_db)
-):
-
-    skills = get_user_skills(db, user_id)
-
-    return skills
-
-
-@router.put("/skills/{skillId}")
-def update_user_skill(
-    skillId: int,
-    skill: SkillCreate,
-    db: Session = Depends(get_db)
-):
-    logger.info(f"User updated skill {skillId}")
-
-    valid_types = ["offered", "desired"]
-    valid_levels = ["beginner", "intermediate", "advanced", "expert"]
-
-    if skill.skill_type not in valid_types:
-        raise HTTPException(status_code=400, detail="Invalid skill type")
-
-    if skill.proficiency_level not in valid_levels:
-        raise HTTPException(status_code=400, detail="Invalid proficiency level")
-
-    updated_skill = update_skill(db, skillId, skill)
-
-    if not updated_skill:
-        raise HTTPException(status_code=404, detail="Skill not found")
-
-    return updated_skill
-
-@router.delete("/skills/{skillId}")
-def delete_user_skill(
-    skillId: int,
-    user_id: int,
-    db: Session = Depends(get_db)
-):
-
-    result = delete_skill(db, skillId, user_id)
-
-    if result is None:
-        raise HTTPException(status_code=404, detail="Skill not found")
-
-    if result == "unauthorized":
-        raise HTTPException(status_code=403, detail="Not allowed to delete this skill")
-
-    logger.info(f"User {user_id} deleted skill {skillId}")
-
-    return {"message": "Skill deleted successfully"}
-
-
-@router.get("/skills/suggestions")
-def get_skill_suggestions(query: str, db: Session = Depends(get_db)):
-    suggestions = suggest_skills(db, query)
-    return suggestions
-
-
-@router.get("/skills/{skill_id}/embedding")
-def get_skill_embedding(skill_id: int, db: Session = Depends(get_db)):
-    embedding = get_embedding_by_skill_id(db, skill_id)
-    return {"skill_id": skill_id, "embedding": embedding}
 
 
 @router.get("/wallet")

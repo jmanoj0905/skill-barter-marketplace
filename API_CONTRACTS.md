@@ -38,7 +38,7 @@ These are the exact shapes of all data objects. Every endpoint returns these. No
   "skill_id": "integer",
   "user_id": "integer (foreign key to User)",
   "skill_name": "string (lowercase, trimmed, 3-50 chars)",
-  "skill_type": "enum: 'offer' | 'want'",
+  "skill_type": "enum: 'offered' | 'desired'",
   "proficiency_level": "enum: 'beginner' | 'intermediate' | 'advanced' | 'expert' (optional)",
   "created_at": "ISO8601 timestamp"
 }
@@ -50,7 +50,7 @@ These are the exact shapes of all data objects. Every endpoint returns these. No
   "skill_id": 42,
   "user_id": 1,
   "skill_name": "python programming",
-  "skill_type": "offer",
+  "skill_type": "offered",
   "proficiency_level": "advanced",
   "created_at": "2026-01-20T10:15:00Z"
 }
@@ -495,7 +495,7 @@ These are all the endpoints your system exposes. Each has exact request/response
 ```json
 {
   "skill_name": "string (required, 3-50 chars, will be lowercased)",
-  "skill_type": "enum: 'offer' | 'want' (required)",
+  "skill_type": "enum: 'offered' | 'desired' (required)",
   "proficiency_level": "enum: 'beginner' | 'intermediate' | 'advanced' | 'expert' (optional)"
 }
 ```
@@ -506,7 +506,7 @@ These are all the endpoints your system exposes. Each has exact request/response
   "skill_id": 42,
   "user_id": 1,
   "skill_name": "python programming",
-  "skill_type": "offer",
+  "skill_type": "offered",
   "proficiency_level": "advanced",
   "created_at": "2026-01-20T10:15:00Z"
 }
@@ -524,7 +524,7 @@ These are all the endpoints your system exposes. Each has exact request/response
   ```json
   {
     "error": "invalid_skill_type",
-    "message": "Skill type must be 'offer' or 'want'"
+    "message": "Skill type must be 'offered' or 'desired'"
   }
   ```
 - 401 Unauthorized

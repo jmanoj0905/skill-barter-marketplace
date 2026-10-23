@@ -99,8 +99,8 @@ class MatchingService:
                 'user_id': candidate_info['user_id'],
                 'name': candidate_info['name'],
                 'trust_score': candidate_info['trust_score'],
-                'skills_offered': self._get_user_skills(candidate['user_id'], 'offer'),
-                'skills_wanted': self._get_user_skills(candidate['user_id'], 'want'),
+                'skills_offered': self._get_user_skills(candidate['user_id'], 'offered'),
+                'skills_wanted': self._get_user_skills(candidate['user_id'], 'desired'),
                 'match_score': match_score,
                 'skill_similarity': round(candidate['similarity'], 3),
                 'has_mutual_interest': mutual_interest is not None,
@@ -177,7 +177,7 @@ class MatchingService:
                     s.proficiency_level,
                     1 - (s.embedding <=> %s::vector) as similarity
                 FROM skills s
-                WHERE s.skill_type = 'offer'
+                WHERE s.skill_type = 'offered'
                   AND s.user_id != %s
                   AND s.embedding IS NOT NULL
                   AND 1 - (s.embedding <=> %s::vector) >= %s
@@ -214,7 +214,7 @@ class MatchingService:
                 """
                 SELECT skill_name, embedding::text as embedding
                 FROM skills
-                WHERE user_id = %s AND skill_type = 'offer' AND embedding IS NOT NULL
+                WHERE user_id = %s AND skill_type = 'offered' AND embedding IS NOT NULL
                 """,
                 (user_a_id,)
             )
@@ -228,7 +228,7 @@ class MatchingService:
                 """
                 SELECT skill_name, embedding::text as embedding
                 FROM skills
-                WHERE user_id = %s AND skill_type = 'want' AND embedding IS NOT NULL
+                WHERE user_id = %s AND skill_type = 'desired' AND embedding IS NOT NULL
                 """,
                 (user_b_id,)
             )
@@ -415,8 +415,8 @@ class MatchingService:
             cursor.execute(
                 """
                 SELECT 
-                    COUNT(CASE WHEN skill_type = 'offer' THEN 1 END) as skills_offered,
-                    COUNT(CASE WHEN skill_type = 'want' THEN 1 END) as skills_wanted,
+                    COUNT(CASE WHEN skill_type = 'offered' THEN 1 END) as skills_offered,
+                    COUNT(CASE WHEN skill_type = 'desired' THEN 1 END) as skills_wanted,
                     COUNT(CASE WHEN embedding IS NOT NULL THEN 1 END) as skills_with_embeddings
                 FROM skills
                 WHERE user_id = %s
@@ -430,7 +430,7 @@ class MatchingService:
                 """
                 SELECT COUNT(DISTINCT s2.user_id) as potential_partners
                 FROM skills s1
-                JOIN skills s2 ON s1.skill_type = 'want' AND s2.skill_type = 'offer'
+                JOIN skills s2 ON s1.skill_type = 'desired' AND s2.skill_type = 'offered'
                 WHERE s1.user_id = %s
                   AND s2.user_id != %s
                   AND s1.embedding IS NOT NULL
